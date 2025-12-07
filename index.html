@@ -3,250 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Link - Ultra Secure Chat</title>
+    <title>GhostLink - Anonymous Chat</title>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
     <style>
         :root {
-            --bg: #09090b;
-            --surface: #18181b;
-            --surface-hover: #27272a;
-            --primary: #6366f1; /* Indigo */
-            --primary-glow: rgba(99, 102, 241, 0.4);
-            --text: #f4f4f5;
-            --text-sec: #a1a1aa;
-            --border: #27272a;
-            --green: #22c55e;
-            --red: #ef4444;
+            --bg: #050505;
+            --panel: #111111;
+            --border: #333;
+            --primary: #00ff88; /* Hacker Yeşili */
+            --accent: #00ccff; /* Neon Mavi */
+            --text: #e0e0e0;
+            --red: #ff3333;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
 
         body {
             background-color: var(--bg);
             color: var(--text);
+            font-family: 'Inter', sans-serif;
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            background-image: radial-gradient(circle at 50% 0%, #1e1b4b 0%, transparent 50%);
         }
 
-        /* --- UI CONTAINER --- */
-        .app-shell {
-            width: 100%; max-width: 1200px; height: 90vh;
-            background: rgba(24, 24, 27, 0.6);
-            backdrop-filter: blur(20px);
+        /* --- ANA KUTU --- */
+        .app-container {
+            width: 1000px; height: 90vh;
+            background: var(--panel);
             border: 1px solid var(--border);
-            border-radius: 24px;
-            display: flex; overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            display: flex;
+            box-shadow: 0 0 50px rgba(0, 255, 136, 0.05);
+            overflow: hidden;
             position: relative;
         }
 
-        /* --- SOL PANEL (Login & Status) --- */
+        /* --- SOL PANEL (BİLGİ & BAĞLANTI) --- */
         .sidebar {
-            width: 320px; background: var(--surface);
+            width: 300px;
+            background: rgba(255,255,255,0.02);
             border-right: 1px solid var(--border);
-            padding: 30px; display: flex; flex-direction: column; gap: 25px;
-            z-index: 2;
+            padding: 25px;
+            display: flex; flex-direction: column; gap: 20px;
         }
 
-        .brand {
-            font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px;
+        .logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem; font-weight: bold;
+            color: var(--primary);
             display: flex; align-items: center; gap: 10px;
         }
-        .brand i { color: var(--primary); font-size: 1.8rem; }
 
-        .id-card {
-            background: var(--bg); padding: 20px; border-radius: 16px; border: 1px solid var(--border);
-            position: relative; overflow: hidden;
+        .id-box {
+            background: #000; padding: 15px; border: 1px dashed var(--border);
+            border-radius: 8px; text-align: center;
         }
-        .id-card::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--primary);
-        }
-        .label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-sec); font-weight: 700; letter-spacing: 1px; margin-bottom: 8px; }
         .my-id {
-            font-family: 'Courier New', monospace; font-size: 1.2rem; font-weight: bold; color: white;
-            cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem; color: var(--accent); margin-top: 5px;
+            cursor: pointer; user-select: all;
         }
-        .my-id:hover { color: var(--primary); }
-        .my-id i { font-size: 1rem; opacity: 0.5; }
+        .my-id:hover { text-decoration: underline; }
+        .copy-hint { font-size: 0.7rem; color: #666; margin-top: 5px; }
 
-        .connect-form { display: flex; flex-direction: column; gap: 15px; margin-top: auto; }
+        .connect-form {
+            margin-top: auto;
+            display: flex; flex-direction: column; gap: 10px;
+        }
         .inp {
-            background: var(--bg); border: 1px solid var(--border); color: white; padding: 14px;
-            border-radius: 12px; font-size: 0.95rem; outline: none; transition: 0.3s;
+            background: #000; border: 1px solid var(--border); color: white;
+            padding: 12px; border-radius: 6px; font-family: 'JetBrains Mono', monospace;
         }
-        .inp:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
-
-        .btn {
-            background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px;
-            font-weight: 600; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px;
-        }
-        .btn:hover { background: #4f46e5; transform: translateY(-2px); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .status-badge {
-            display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px;
-            background: rgba(34, 197, 94, 0.1); color: var(--green); border-radius: 20px;
-            font-size: 0.8rem; font-weight: 600; margin-top: 10px; opacity: 0; transition: 0.3s;
-        }
-        .status-badge.visible { opacity: 1; }
-        .dot { width: 8px; height: 8px; background: currentColor; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
-
-        /* --- SAĞ PANEL (Chat) --- */
-        .chat-container { flex: 1; display: flex; flex-direction: column; position: relative; background: rgba(0,0,0,0.2); }
+        .inp:focus { border-color: var(--primary); }
         
-        .chat-header {
-            height: 80px; padding: 0 30px; border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: space-between;
-            background: rgba(24, 24, 27, 0.8);
+        .btn {
+            background: var(--primary); color: #000; border: none; padding: 12px;
+            font-weight: bold; cursor: pointer; border-radius: 6px; transition: 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
         }
-        .user-info h2 { font-size: 1.1rem; font-weight: 700; }
-        .user-info p { font-size: 0.8rem; color: var(--text-sec); display: flex; align-items: center; gap: 5px; }
+        .btn:hover { background: #00cc6a; transform: translateY(-2px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* --- SAĞ PANEL (CHAT) --- */
+        .chat-area { flex: 1; display: flex; flex-direction: column; position: relative; background: radial-gradient(circle at center, #1a1a1a 0%, #111 100%); }
+
+        .header {
+            height: 60px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+            background: rgba(0,0,0,0.5);
+        }
+        .status { font-size: 0.8rem; color: #666; display: flex; align-items: center; gap: 6px; }
+        .status.connected { color: var(--primary); }
+        .dot { width: 8px; height: 8px; background: currentColor; border-radius: 50%; box-shadow: 0 0 5px currentColor; }
 
         .messages {
-            flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px;
+            flex: 1; padding: 20px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 15px;
         }
-        
-        /* Empty State */
-        .empty-state {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            text-align: center; color: var(--text-sec);
-        }
-        .empty-state i { font-size: 4rem; opacity: 0.2; margin-bottom: 20px; }
-
         .msg {
-            max-width: 70%; padding: 14px 18px; border-radius: 20px; font-size: 0.95rem; line-height: 1.5;
-            position: relative; animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            max-width: 75%; padding: 10px 15px; border-radius: 12px; font-size: 0.9rem; line-height: 1.5;
+            position: relative; animation: fadeUp 0.3s ease;
         }
-        .msg.me {
-            align-self: flex-end; background: var(--primary); color: white;
-            border-bottom-right-radius: 4px; box-shadow: 0 5px 15px var(--primary-glow);
-        }
-        .msg.them {
-            align-self: flex-start; background: var(--surface-hover); color: var(--text);
-            border: 1px solid var(--border); border-bottom-left-radius: 4px;
-        }
-        .msg-meta { font-size: 0.7rem; opacity: 0.7; margin-top: 5px; text-align: right; }
-        .msg img { max-width: 100%; border-radius: 12px; margin-top: 5px; cursor: pointer; }
+        .msg.me { align-self: flex-end; background: var(--primary); color: #000; border-bottom-right-radius: 2px; }
+        .msg.them { align-self: flex-start; background: #222; color: #ddd; border: 1px solid var(--border); border-bottom-left-radius: 2px; }
+        .sys-msg { align-self: center; font-size: 0.75rem; color: #555; background: #000; padding: 4px 10px; border-radius: 20px; border: 1px solid #222; }
 
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         .input-area {
-            padding: 20px 30px; background: var(--surface); border-top: 1px solid var(--border);
-            display: flex; gap: 15px; align-items: center;
+            padding: 20px; border-top: 1px solid var(--border);
+            display: flex; gap: 10px; background: rgba(0,0,0,0.5);
         }
-        .chat-inp {
-            flex: 1; background: var(--bg); border: none; padding: 15px; border-radius: 12px;
-            color: white; outline: none; transition: 0.3s;
-        }
-        .chat-inp:focus { box-shadow: 0 0 0 2px var(--primary-glow); }
-        
+        .chat-inp { flex: 1; background: #000; border: 1px solid var(--border); padding: 12px; border-radius: 8px; color: white; }
         .icon-btn {
-            width: 45px; height: 45px; border-radius: 12px; border: none; background: var(--bg);
-            color: var(--text-sec); font-size: 1.2rem; cursor: pointer; transition: 0.2s;
-            display: flex; align-items: center; justify-content: center;
+            width: 45px; height: 45px; border-radius: 8px; border: none; cursor: pointer;
+            background: #222; color: #aaa; font-size: 1.2rem; transition: 0.2s;
         }
-        .icon-btn:hover { background: var(--surface-hover); color: var(--text); }
-        .icon-btn.send { background: var(--primary); color: white; }
-        .icon-btn.send:hover { background: #4f46e5; }
+        .icon-btn:hover { color: var(--primary); background: #333; }
+        .icon-btn.call { color: var(--accent); }
+        .icon-btn.call:hover { background: rgba(0, 204, 255, 0.1); }
 
-        /* Notification Toast */
-        .toast {
-            position: fixed; top: 20px; right: 20px; background: var(--surface); border: 1px solid var(--border);
-            padding: 15px 20px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex; align-items: center; gap: 10px; transform: translateX(200%); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 1000;
+        /* --- ARAMA EKRANI (OVERLAY) --- */
+        #call-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.95); z-index: 100;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
         }
-        .toast.show { transform: translateX(0); }
-        .toast i { color: var(--green); }
-
-        /* Mobil */
-        @media (max-width: 768px) {
-            .app-shell { height: 100vh; border-radius: 0; border: none; flex-direction: column; }
-            .sidebar { width: 100%; padding: 20px; height: auto; border-bottom: 1px solid var(--border); }
-            .chat-container { flex: 1; }
-            .connect-form { display: none; } /* Mobilde yer kaplamasın, modal yapılabilir */
-            .id-card { padding: 10px; }
-            .brand { font-size: 1.2rem; }
+        .pulse-ring {
+            width: 120px; height: 120px; border-radius: 50%; border: 2px solid var(--accent);
+            display: flex; align-items: center; justify-content: center; font-size: 3rem; color: var(--accent);
+            animation: pulse 2s infinite; margin-bottom: 20px;
         }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 204, 255, 0.5); } 70% { box-shadow: 0 0 0 30px rgba(0,0,0,0); } 100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); } }
         
+        .call-text { font-size: 1.5rem; font-weight: bold; margin-bottom: 40px; }
+        .call-actions { display: flex; gap: 30px; }
+        .c-btn {
+            width: 70px; height: 70px; border-radius: 50%; border: none; cursor: pointer;
+            font-size: 1.5rem; color: white; transition: 0.2s; display: flex; align-items: center; justify-content: center;
+        }
+        .c-btn:hover { transform: scale(1.1); }
+        .answer { background: #00ff88; color: black; }
+        .hangup { background: #ff3333; }
+
+        /* MOBİL UYUM */
+        @media (max-width: 768px) {
+            .app-container { width: 100%; height: 100%; border: none; border-radius: 0; flex-direction: column; }
+            .sidebar { width: 100%; height: auto; padding: 15px; border-bottom: 1px solid var(--border); border-right: none; flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+            .connect-form { width: 100%; flex-direction: row; }
+            .id-box { padding: 5px 10px; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="app-shell">
-        <aside class="sidebar">
-            <div class="brand">
-                <i class="ri-radar-fill"></i> QUANTUM LINK
-            </div>
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="logo"><i class="ri-ghost-line"></i> GHOSTLINK</div>
             
-            <div class="id-card" onclick="copyId()">
-                <div class="label">Senin Güvenli ID'n</div>
-                <div class="my-id" id="my-id">Oluşturuluyor... <i class="ri-file-copy-line"></i></div>
+            <div class="id-box" onclick="copyId()">
+                <div style="font-size:0.7rem; color:#666;">SENİN ID KODUN</div>
+                <div class="my-id" id="my-id">...</div>
+                <div class="copy-hint">Kopyalamak için tıkla</div>
             </div>
 
-            <div class="status-badge" id="status-badge">
-                <div class="dot"></div> Bağlantı Güvenli
-            </div>
-
-            <div class="connect-form" id="connect-form">
-                <div class="label">Kuzeninin ID'si</div>
-                <input type="text" class="inp" id="target-id" placeholder="ID'yi buraya yapıştır...">
-                <button class="btn" id="connect-btn" onclick="connect()">
+            <div class="connect-form" id="conn-form">
+                <input type="text" id="friend-id" class="inp" placeholder="Arkadaşının ID'si">
+                <button class="btn" id="btn-connect" onclick="connectUser()">
                     <i class="ri-link"></i> BAĞLAN
                 </button>
             </div>
-        </aside>
+        </div>
 
-        <main class="chat-container">
-            <header class="chat-header">
-                <div class="user-info">
-                    <h2 id="chat-title">Bağlantı Bekleniyor...</h2>
-                    <p id="chat-subtitle"><i class="ri-lock-2-line"></i> Uçtan uca şifreli</p>
+        <div class="chat-area">
+            <div class="header">
+                <div style="font-weight:bold;">Sohbet Odası</div>
+                <div class="status" id="status-display">
+                    <div class="dot"></div> Bağlantı Bekleniyor
                 </div>
-                <div>
-                    <button class="icon-btn" onclick="clearChat()"><i class="ri-delete-bin-line"></i></button>
-                </div>
-            </header>
+            </div>
 
             <div class="messages" id="msgs">
-                <div class="empty-state">
-                    <i class="ri-signal-wifi-off-line"></i>
-                    <h3>Henüz kimse bağlı değil</h3>
-                    <p>Sol taraftan kuzeninin ID'sini girip bağlan.</p>
-                </div>
+                <div class="sys-msg">Güvenli ve anonim sohbet başlatmak için ID paylaşın.</div>
             </div>
 
             <div class="input-area">
-                <input type="file" id="file-input" hidden accept="image/*" onchange="sendImage()">
-                <button class="icon-btn" onclick="document.getElementById('file-input').click()"><i class="ri-image-add-line"></i></button>
-                <input type="text" class="chat-inp" id="msg-inp" placeholder="Mesaj yaz..." disabled>
-                <button class="icon-btn send" onclick="sendMessage()"><i class="ri-send-plane-fill"></i></button>
+                <input type="text" id="msg-input" class="chat-inp" placeholder="Mesaj yaz..." disabled>
+                <button class="icon-btn call" onclick="startCall()"><i class="ri-phone-fill"></i></button>
+                <button class="icon-btn" onclick="sendMsg()"><i class="ri-send-plane-fill"></i></button>
             </div>
-        </main>
+
+            <div id="call-overlay">
+                <div class="pulse-ring"><i class="ri-mic-fill"></i></div>
+                <div class="call-text" id="call-status">Aranıyor...</div>
+                
+                <div class="call-actions">
+                    <button class="c-btn answer" id="btn-answer" onclick="answerCall()" style="display:none;"><i class="ri-phone-fill"></i></button>
+                    <button class="c-btn hangup" onclick="endCall()"><i class="ri-phone-end-fill"></i></button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="toast" id="toast">
-        <i class="ri-checkbox-circle-fill"></i>
-        <span id="toast-msg">İşlem başarılı</span>
-    </div>
+    <audio id="remote-audio" autoplay></audio>
 
 <script>
-    // --- SES MOTORU (Bildirim Sesi) ---
-    const notifSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU..."); // Boş ses placeholder, tarayıcı hatası vermesin diye.
-
-    // --- SİSTEM AYARLARI ---
-    let myId = "";
-    let peer;
-    let conn = null;
-
-    // Bağlantı Sorununu Çözen STUN Sunucuları (BU KISIM ÖNEMLİ)
+    // --- KONFİGÜRASYON ---
+    // Google STUN Sunucuları (Bağlantı kopmasını engeller)
     const peerConfig = {
         debug: 2,
         config: {
@@ -257,46 +225,45 @@
         }
     };
 
-    // DOM Elementleri
-    const myIdEl = document.getElementById('my-id');
-    const statusBadge = document.getElementById('status-badge');
-    const msgsArea = document.getElementById('msgs');
-    const msgInput = document.getElementById('msg-inp');
-    const connectBtn = document.getElementById('connect-btn');
-    const connectForm = document.getElementById('connect-form');
+    // Rastgele ID oluştur (user_xxxxx)
+    const randomId = "user_" + Math.floor(Math.random() * 90000 + 10000);
+
+    let peer;
+    let conn;
+    let activeCall;
+    let localStream;
 
     // --- BAŞLATMA ---
     function init() {
-        // Rastgele kısa bir ID oluştur (okuması kolay olsun)
-        const randomId = "user_" + Math.random().toString(36).substr(2, 5);
-        
         peer = new Peer(randomId, peerConfig);
 
         peer.on('open', (id) => {
-            myId = id;
-            myIdEl.innerHTML = `${id} <i class="ri-file-copy-line"></i>`;
-            showToast("ID Oluşturuldu: " + id);
+            document.getElementById('my-id').innerText = id;
         });
 
+        // Hata Yönetimi
         peer.on('error', (err) => {
-            console.error(err);
-            alert("Hata: " + err.type);
+            alert("Hata oluştu: " + err.type);
         });
 
-        // Biri bana bağlanırsa
+        // Biri bağlanırsa
         peer.on('connection', (c) => {
             handleConnection(c);
-            showToast("Kuzenin bağlandı!");
+            addSystemMsg("Bir kullanıcı bağlandı!");
+        });
+
+        // Arama gelirse
+        peer.on('call', (call) => {
+            showCallScreen(true);
+            document.getElementById('call-status').innerText = "Gelen Arama...";
+            activeCall = call;
         });
     }
 
-    // --- BAĞLANTI YÖNETİMİ ---
-    function connect() {
-        const target = document.getElementById('target-id').value.trim();
-        if(!target) return showToast("Lütfen bir ID girin");
-        
-        connectBtn.innerText = "Bağlanılıyor...";
-        connectBtn.disabled = true;
+    // --- BAĞLANTI ---
+    function connectUser() {
+        const target = document.getElementById('friend-id').value.trim();
+        if(!target) return alert("ID gir!");
 
         const c = peer.connect(target);
         handleConnection(c);
@@ -306,27 +273,15 @@
         conn = c;
 
         conn.on('open', () => {
-            // UI Güncelleme
-            statusBadge.classList.add('visible');
-            document.getElementById('chat-title').innerText = "Bağlı: " + conn.peer;
-            document.getElementById('chat-subtitle').innerHTML = `<span style="color:#22c55e">● Çevrimiçi</span>`;
-            
-            connectForm.style.display = 'none'; // Bağlanınca formu gizle
-            msgInput.disabled = false;
-            msgInput.focus();
-            connectBtn.innerText = "BAĞLAN";
-            connectBtn.disabled = false;
-            
-            msgsArea.innerHTML = ""; // Empty state'i temizle
-            addSystemMessage("Güvenli tünel oluşturuldu. Sohbete başla.");
+            document.getElementById('status-display').innerHTML = `<div class="dot" style="background:#00ff88; box-shadow:0 0 10px #00ff88;"></div> BAĞLANDI`;
+            document.getElementById('status-display').classList.add('connected');
+            document.getElementById('msg-input').disabled = false;
+            document.getElementById('conn-form').style.display = 'none'; // Formu gizle
+            addSystemMsg("Bağlantı güvenli. Sohbete başla.");
         });
 
         conn.on('data', (data) => {
-            if(data.type === 'text') {
-                addMessage(data.content, 'them');
-            } else if(data.type === 'image') {
-                addImage(data.content, 'them');
-            }
+            addMessage(data, 'them');
         });
 
         conn.on('close', () => {
@@ -335,87 +290,94 @@
         });
     }
 
-    // --- MESAJLAŞMA ---
-    msgInput.addEventListener('keypress', (e) => {
-        if(e.key === 'Enter') sendMessage();
+    // --- MESAJ ---
+    document.getElementById('msg-input').addEventListener('keypress', (e) => {
+        if(e.key === 'Enter') sendMsg();
     });
 
-    function sendMessage() {
-        const text = msgInput.value.trim();
-        if(!text || !conn) return;
+    function sendMsg() {
+        const txt = document.getElementById('msg-input').value;
+        if(!txt || !conn) return;
 
-        addMessage(text, 'me');
-        conn.send({ type: 'text', content: text });
-        msgInput.value = "";
+        addMessage(txt, 'me');
+        conn.send(txt);
+        document.getElementById('msg-input').value = "";
     }
 
-    function sendImage() {
-        const file = document.getElementById('file-input').files[0];
-        if(!file || !conn) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const imgData = e.target.result;
-            addImage(imgData, 'me');
-            conn.send({ type: 'image', content: imgData });
-        };
-        reader.readAsDataURL(file);
-    }
-
-    // --- UI FONKSİYONLARI ---
-    function addMessage(text, sender) {
-        const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    function addMessage(txt, type) {
         const div = document.createElement('div');
-        div.className = `msg ${sender}`;
-        div.innerHTML = `
-            ${text}
-            <div class="msg-meta">${time}</div>
-        `;
-        msgsArea.appendChild(div);
-        scrollToBottom();
+        div.className = `msg ${type}`;
+        div.innerText = txt;
+        document.getElementById('msgs').appendChild(div);
+        document.getElementById('msgs').scrollTop = 99999;
     }
 
-    function addImage(src, sender) {
-        const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    function addSystemMsg(txt) {
         const div = document.createElement('div');
-        div.className = `msg ${sender}`;
-        div.innerHTML = `
-            <img src="${src}" onclick="window.open(this.src)">
-            <div class="msg-meta">${time}</div>
-        `;
-        msgsArea.appendChild(div);
-        scrollToBottom();
+        div.className = 'sys-msg';
+        div.innerText = txt;
+        document.getElementById('msgs').appendChild(div);
     }
 
-    function addSystemMessage(text) {
-        const div = document.createElement('div');
-        div.style.textAlign = 'center';
-        div.style.color = '#555';
-        div.style.fontSize = '0.8rem';
-        div.style.margin = '20px 0';
-        div.innerText = text;
-        msgsArea.appendChild(div);
+    // --- SESLİ ARAMA ---
+    function startCall() {
+        if(!conn) return alert("Önce bağlanmalısın!");
+        
+        showCallScreen(false); // Arayan benim
+        document.getElementById('call-status').innerText = "Aranıyor...";
+
+        navigator.mediaDevices.getUserMedia({audio: true}).then(stream => {
+            localStream = stream;
+            const call = peer.call(conn.peer, stream);
+            activeCall = call;
+            
+            call.on('stream', remoteStream => {
+                document.getElementById('remote-audio').srcObject = remoteStream;
+                document.getElementById('call-status').innerText = "Ses Bağlandı";
+            });
+        }).catch(e => {
+            alert("Mikrofon izni ver!");
+            closeCallScreen();
+        });
     }
 
-    function scrollToBottom() {
-        msgsArea.scrollTop = msgsArea.scrollHeight;
+    function answerCall() {
+        navigator.mediaDevices.getUserMedia({audio: true}).then(stream => {
+            localStream = stream;
+            activeCall.answer(stream);
+            
+            document.getElementById('call-status').innerText = "Ses Bağlandı";
+            document.getElementById('btn-answer').style.display = 'none';
+
+            activeCall.on('stream', remoteStream => {
+                document.getElementById('remote-audio').srcObject = remoteStream;
+            });
+        });
     }
 
-    function clearChat() {
-        msgsArea.innerHTML = "";
-        addSystemMessage("Sohbet geçmişi temizlendi.");
+    function endCall() {
+        if(activeCall) activeCall.close();
+        if(localStream) localStream.getTracks().forEach(t => t.stop());
+        closeCallScreen();
     }
 
+    function showCallScreen(isIncoming) {
+        document.getElementById('call-overlay').style.display = 'flex';
+        if(isIncoming) {
+            document.getElementById('btn-answer').style.display = 'flex';
+        } else {
+            document.getElementById('btn-answer').style.display = 'none';
+        }
+    }
+
+    function closeCallScreen() {
+        document.getElementById('call-overlay').style.display = 'none';
+    }
+
+    // --- KOPYALA ---
     function copyId() {
         navigator.clipboard.writeText(myId);
-        showToast("ID Kopyalandı!");
-    }
-
-    function showToast(msg) {
-        const t = document.getElementById('toast');
-        document.getElementById('toast-msg').innerText = msg;
-        t.classList.add('show');
-        setTimeout(() => t.classList.remove('show'), 3000);
+        alert("ID Kopyalandı!");
     }
 
     // Başlat
