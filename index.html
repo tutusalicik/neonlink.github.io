@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeonLink - Secure P2P Chat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #00f2ff; /* Neon Cyan */
+            --secondary: #7000ff; /* Neon Purple */
+            --bg-dark: #050510;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #ffffff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(112, 0, 255, 0.2) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 242, 255, 0.15) 0%, transparent 20%);
+        }
+
+        /* --- ANA KART --- */
+        .app-container {
+            width: 90%; max-width: 1000px; height: 85vh;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            display: flex; overflow: hidden; position: relative;
+        }
+
+        /* --- SOL PANEL (BAĞLANTI) --- */
+        .sidebar {
+            width: 300px;
+            background: rgba(0,0,0,0.3);
+            border-right: 1px solid var(--border);
+            padding: 30px;
+            display: flex; flex-direction: column; gap: 20px;
+        }
+
+        .logo { font-size: 1.8rem; font-weight: 700; background: linear-gradient(to right, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px; }
+
+        .info-box {
+            background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; border: 1px solid var(--border);
+        }
+        .info-label { font-size: 0.8rem; color: #aaa; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        .info-val { font-family: monospace; font-size: 1.1rem; color: var(--primary); word-break: break-all; cursor: pointer; }
+        .info-val:hover { text-decoration: underline; }
+
+        .connect-box { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
+        .inp {
+            background: rgba(0,0,0,0.5); border: 1px solid var(--border);
+            padding: 12px; border-radius: 8px; color: white; outline: none; transition: 0.3s;
+        }
+        .inp:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(0, 242, 255, 0.2); }
+        
+        .btn {
+            background: linear-gradient(45deg, var(--secondary), var(--primary));
+            border: none; padding: 12px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .btn:hover { transform: scale(1.02); box-shadow: 0 0 20px rgba(112, 0, 255, 0.4); }
+        .btn.disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+
+        .status-indicator {
+            display: flex; align-items: center; gap: 10px; padding: 10px;
+            background: rgba(0,0,0,0.4); border-radius: 50px; width: fit-content;
+        }
+        .dot { width: 10px; height: 10px; border-radius: 50%; background: #555; box-shadow: 0 0 5px #555; transition: 0.3s; }
+        .dot.online { background: #0f0; box-shadow: 0 0 10px #0f0; }
+
+        /* --- SAĞ PANEL (CHAT) --- */
+        .chat-area { flex: 1; display: flex; flex-direction: column; background: rgba(0,0,0,0.1); }
+        
+        .chat-header {
+            padding: 20px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255,255,255,0.02);
+        }
+        .chat-title { font-size: 1.2rem; font-weight: 500; display: flex; align-items: center; gap: 10px; }
+
+        .messages {
+            flex: 1; padding: 30px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 15px;
+        }
+
+        .msg { max-width: 70%; padding: 12px 18px; border-radius: 18px; line-height: 1.5; font-size: 0.95rem; position: relative; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        .msg.me { 
+            align-self: flex-end; 
+            background: linear-gradient(135deg, var(--secondary), #4a00e0); 
+            color: white; 
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 5px 15px rgba(74, 0, 224, 0.3);
+        }
+        
+        .msg.them { 
+            align-self: flex-start; 
+            background: rgba(255,255,255,0.1); 
+            color: #eee; 
+            border-bottom-left-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .msg-time { font-size: 0.7rem; opacity: 0.7; margin-top: 5px; text-align: right; }
+        .msg img { max-width: 100%; border-radius: 10px; margin-top: 10px; cursor: pointer; }
+
+        .input-area {
+            padding: 20px; background: rgba(0,0,0,0.2); border-top: 1px solid var(--border);
+            display: flex; gap: 10px; align-items: center;
+        }
+        
+        .icon-btn { 
+            width: 45px; height: 45px; border-radius: 50%; border: none; 
+            background: rgba(255,255,255,0.05); color: var(--text); cursor: pointer; transition: 0.2s;
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+        }
+        .icon-btn:hover { background: rgba(255,255,255,0.15); color: var(--primary); }
+
+        @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
+        /* MOBİL UYUMLULUK */
+        @media (max-width: 768px) {
+            .app-container { flex-direction: column; height: 100vh; width: 100%; border-radius: 0; border: none; }
+            .sidebar { width: 100%; height: auto; padding: 15px; flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+            .info-box, .logo { margin: 0; }
+            .connect-box { display: none; /* Mobilde bağlantı panelini gizle, modal yapabilirsin */ }
+            .chat-area { flex: 1; }
+            /* Basitlik için mobilde inputları gösterelim */
+            .sidebar.mobile-hide { display: none; }
+        }
+
+        /* Modal (ID Girişi için) */
+        #connection-modal {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.9); z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+        .modal-content {
+            background: #111; padding: 40px; border-radius: 20px; border: 1px solid var(--primary);
+            width: 90%; max-width: 400px; text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="connection-modal">
+        <div class="modal-content">
+            <h2 class="logo">NEONLINK</h2>
+            <p style="color:#aaa; margin-bottom: 20px;">Kuzeninin ID'sini al ve bağlan.</p>
+            
+            <div class="info-box" style="margin-bottom: 20px;">
+                <div class="info-label">SENİN ID (Bunu kopyala)</div>
+                <div class="info-val" id="my-id-display" onclick="copyId()" title="Kopyalamak için tıkla">ID Oluşturuluyor...</div>
+            </div>
+
+            <div style="text-align: left;">
+                <label class="info-label">ARKADAŞININ ID'Sİ</label>
+                <input type="text" id="friend-id-input" class="inp" placeholder="Buraya yapıştır..." style="width:100%; margin-bottom: 10px;">
+                <button class="btn" onclick="connectToFriend()" style="width:100%">BAĞLAN</button>
+            </div>
+            <p id="conn-status" style="margin-top:15px; font-size: 0.9rem; color: var(--primary); min-height: 20px;"></p>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="logo">NEONLINK</div>
+            
+            <div class="status-indicator">
+                <div class="dot" id="status-dot"></div>
+                <span id="status-text" style="font-size:0.8rem; font-weight:bold;">Bağlantı Yok</span>
+            </div>
+
+            <div style="margin-top: 20px; color: #888; font-size: 0.9rem;">
+                <p><i class="fas fa-shield-alt"></i> Uçtan Uca Şifreli</p>
+                <p style="margin-top:5px;"><i class="fas fa-bolt"></i> P2P Bağlantı</p>
+            </div>
+        </div>
+
+        <div class="chat-area">
+            <div class="chat-header">
+                <div class="chat-title">
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #00f2ff, #7000ff); border-radius: 50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">K</div>
+                    <div>
+                        <div id="chat-user-name">Kuzen</div>
+                        <div style="font-size: 0.7rem; color: var(--primary); opacity: 0.7;">Çevrimiçi</div>
+                    </div>
+                </div>
+                <div>
+                    <button class="icon-btn"><i class="fas fa-phone"></i></button>
+                </div>
+            </div>
+
+            <div class="messages" id="msgs">
+                <div style="text-align: center; margin-top: 50px; opacity: 0.5;">
+                    <i class="fas fa-lock" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <p>Sohbet başlatmak için bağlanın.</p>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <input type="file" id="img-upload" hidden accept="image/*" onchange="sendImage()">
+                <button class="icon-btn" onclick="document.getElementById('img-upload').click()"><i class="fas fa-image"></i></button>
+                <input type="text" id="msg-input" class="inp" placeholder="Bir mesaj yaz..." disabled>
+                <button class="icon-btn" onclick="sendMessage()" style="background: var(--primary); color: #000;"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    /* --- SİSTEM --- */
+    const peer = new Peer(); // ID otomatik oluşsun
+    let conn = null;
+    let myId = "";
+
+    const statusText = document.getElementById('status-text');
+    const statusDot = document.getElementById('status-dot');
+    const msgInput = document.getElementById('msg-input');
+    const msgArea = document.getElementById('msgs');
+    const modal = document.getElementById('connection-modal');
+    
+    // Ses Efekti (Base64 Bip)
+    const beep = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU..."); // Temsili ses
+
+    // 1. Peer Başlatma
+    peer.on('open', (id) => {
+        myId = id;
+        document.getElementById('my-id-display').innerText = id;
+    });
+
+    peer.on('error', (err) => {
+        alert("Bağlantı hatası: " + err.type);
+    });
+
+    // 2. Gelen Bağlantıyı Kabul Et
+    peer.on('connection', (c) => {
+        conn = c;
+        document.getElementById('conn-status').innerText = "Biri bağlanıyor...";
+        setupConnection();
+    });
+
+    // 3. Bağlanma Fonksiyonu
+    function connectToFriend() {
+        const friendId = document.getElementById('friend-id-input').value.trim();
+        if(!friendId) return alert("Lütfen ID girin");
+        
+        document.getElementById('conn-status').innerText = "Bağlanılıyor...";
+        conn = peer.connect(friendId);
+        setupConnection();
+    }
+
+    function setupConnection() {
+        conn.on('open', () => {
+            // Bağlantı başarılı
+            modal.style.display = 'none'; // Modalı kapat
+            statusText.innerText = "Bağlı";
+            statusDot.classList.add('online');
+            msgInput.disabled = false;
+            msgArea.innerHTML = ""; // Temizle
+            
+            // Hoşgeldin mesajı
+            addSystemMsg("Bağlantı güvenli bir şekilde kuruldu.");
+        });
+
+        conn.on('data', (data) => {
+            // Veri gelince
+            if(data.type === 'text') {
+                addMessage(data.content, 'them');
+                try { beep.play(); } catch(e){}
+            } else if (data.type === 'image') {
+                addImage(data.content, 'them');
+            }
+        });
+
+        conn.on('close', () => {
+            alert("Bağlantı koptu!");
+            location.reload();
+        });
+    }
+
+    // --- MESAJLAŞMA ---
+    msgInput.addEventListener('keypress', (e) => {
+        if(e.key === 'Enter') sendMessage();
+    });
+
+    function sendMessage() {
+        const text = msgInput.value.trim();
+        if(!text || !conn) return;
+
+        // Ekrana ekle
+        addMessage(text, 'me');
+        // Gönder
+        conn.send({ type: 'text', content: text });
+        
+        msgInput.value = "";
+    }
+
+    function sendImage() {
+        const file = document.getElementById('img-upload').files[0];
+        if(!file || !conn) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imgData = e.target.result;
+            addImage(imgData, 'me');
+            conn.send({ type: 'image', content: imgData });
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // --- UI YARDIMCILARI ---
+    function addMessage(text, type) {
+        const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const div = document.createElement('div');
+        div.className = `msg ${type}`;
+        div.innerHTML = `
+            ${text}
+            <div class="msg-time">${time}</div>
+        `;
+        msgArea.appendChild(div);
+        msgArea.scrollTop = msgArea.scrollHeight;
+    }
+
+    function addImage(src, type) {
+        const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const div = document.createElement('div');
+        div.className = `msg ${type}`;
+        div.innerHTML = `
+            <img src="${src}" onclick="window.open(this.src)">
+            <div class="msg-time">${time}</div>
+        `;
+        msgArea.appendChild(div);
+        msgArea.scrollTop = msgArea.scrollHeight;
+    }
+
+    function addSystemMsg(text) {
+        const div = document.createElement('div');
+        div.style.textAlign = 'center';
+        div.style.color = '#888';
+        div.style.fontSize = '0.8rem';
+        div.style.margin = '10px 0';
+        div.innerText = text;
+        msgArea.appendChild(div);
+    }
+
+    function copyId() {
+        navigator.clipboard.writeText(myId);
+        const el = document.getElementById('my-id-display');
+        const original = el.innerText;
+        el.innerText = "Kopyalandı!";
+        el.style.color = "#0f0";
+        setTimeout(() => {
+            el.innerText = myId;
+            el.style.color = "var(--primary)";
+        }, 1500);
+    }
+
+</script>
+</body>
+</html>
