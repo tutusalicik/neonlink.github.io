@@ -2,75 +2,73 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Karanlık Koridor: Final Sürüm</title>
+    <title>Karanlık Koridor: Glock 19</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #020202; font-family: 'Courier New', Courier, monospace; user-select: none; }
+        body { margin: 0; overflow: hidden; background-color: #000; user-select: none; font-family: 'Courier New', Courier, monospace; }
         
-        /* --- EKRAN EFEKTLERİ (SHADER GİBİ) --- */
+        /* EFEKTLER */
         #vignette {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(0,0,0,0) 50%, rgba(0,0,0,0.95) 100%);
+            background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,1) 100%);
             pointer-events: none; z-index: 5;
         }
-        #grain {
-            position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)" opacity="0.05"/%3E%3C/svg%3E');
-            pointer-events: none; z-index: 4; opacity: 0.4;
-            animation: grainAnim 0.5s steps(5) infinite;
-        }
-        @keyframes grainAnim { 0% { transform:translate(0,0) } 100% { transform:translate(-5%,-5%) } }
-
-        /* --- ARAYÜZ --- */
-        #ui-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; z-index: 10;
-        }
-        #inventory { padding: 25px; color: #d4af37; font-size: 20px; font-weight: bold; text-shadow: 2px 2px 5px #000; }
-        #interaction {
-            position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%);
-            color: #fff; font-size: 16px; display: none; text-align: center; letter-spacing: 2px;
-            background: rgba(0,0,0,0.8); padding: 12px; border-radius: 4px; border: 1px solid #555;
-        }
+        
         #crosshair {
             position: absolute; top: 50%; left: 50%; width: 4px; height: 4px;
-            background: rgba(255, 255, 255, 0.6); border-radius: 50%; transform: translate(-50%, -50%); z-index: 6;
+            background: rgba(255, 255, 255, 0.8); border-radius: 50%; transform: translate(-50%, -50%); z-index: 6;
+            transition: opacity 0.2s;
             box-shadow: 0 0 4px #fff;
         }
-        
+
+        /* ARAYÜZ */
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;
+        }
+        #ammo-counter {
+            position: absolute; bottom: 30px; right: 30px; font-size: 50px; color: #fff; font-weight: bold; text-shadow: 2px 2px 0 #000;
+            display: none; font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif; letter-spacing: 2px;
+        }
+        #inventory { position: absolute; top: 20px; left: 20px; color: #d4af37; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 2px #000; }
+        #interaction {
+            position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%);
+            color: #fff; background: rgba(0,0,0,0.8); padding: 10px 20px; border: 1px solid #fff; display: none;
+        }
+
+        /* Başlangıç/Bitiş */
         #blocker {
             position: absolute; width: 100%; height: 100%; background: #050505;
-            display: flex; justify-content: center; align-items: center; flex-direction: column;
-            z-index: 999; pointer-events: all; color: #999;
+            display: flex; justify-content: center; align-items: center; flex-direction: column; z-index: 999; color: #aaa;
         }
-        #instructions { font-size: 22px; cursor: pointer; text-align: center; line-height: 1.6; }
-        #instructions span { color: #c00; font-size: 36px; font-weight: bold; }
-        
-        #game-over {
-            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #300; color: #f00; z-index: 1000;
-            justify-content: center; align-items: center; flex-direction: column;
-            font-size: 80px; font-weight: bold; text-shadow: 0 0 50px #f00;
+        #msg { font-size: 40px; color: #c00; font-weight: bold; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 5px; }
+        .controls { text-align: center; line-height: 1.8; font-size: 18px; }
+
+        #hit-flash {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,0,0,0.4);
+            display: none; z-index: 8; pointer-events: none;
         }
     </style>
 </head>
 <body>
+
     <div id="vignette"></div>
-    <div id="grain"></div>
-    <div id="game-over">YAKALANDIN</div>
+    <div id="hit-flash"></div> 
     
     <div id="blocker">
-        <div id="instructions">
-            <span>BAŞLAT</span><br/>
-            (Fair Play Modu Aktif)<br/>
-            W,A,S,D = Yürü | SHIFT = Koş | E = Kapı
+        <div id="msg">BAŞLAT</div>
+        <div class="controls">
+            W,A,S,D = Hareket<br/>
+            E = Kapı<br/>
+            SAĞ TIK = Nişan Al (ADS)<br/>
+            SOL TIK = Ateş Et
         </div>
     </div>
 
     <div id="crosshair"></div>
-    
+
     <div id="ui-layer">
-        <div id="inventory">ENVANTER: <span id="key-status">Skeleton Key</span> 🗝️</div>
-        <div id="interaction">[E] KİLİDİ AÇ</div>
+        <div id="inventory">GÖREV: <span id="status-text">Anahtarı Bul</span></div>
+        <div id="interaction">[E] KAPIYI AÇ</div>
+        <div id="ammo-counter">15 / ∞</div>
     </div>
 
     <script type="importmap">
@@ -82,205 +80,295 @@
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-        // --- OYUN AYARLARI (DENGELİ) ---
-        const SETTINGS = {
-            walkSpeed: 800.0,    
-            runMultiplier: 2.0,  
-            zombieSpeed: 9.2,    
-            zombieScale: 0.7,    // Zombi boyutu %70
-            hesitationTime: 800, // Zombi kapı açılınca 1.5 saniye bekler (Fair Play)
-            fogDensity: 0.09,
-            lightIntensity: 0.3
+        // --- AYARLAR ---
+        const CONFIG = {
+            gunScale: 20.0,       // SİLAH BOYUTU (Çok büyük/küçükse burayı değiştir: örn 1.0 veya 100.0)
+            walkSpeed: 450.0,
+            runSpeed: 800.0,
+            zombieSpeed: 8.5,
+            zombieTurnSpeed: 2.0, // Zombi dönüş hızı
+            zombieHealth: 4,      // Zombi canı
+            recoil: 0.08,         // Geri tepme miktarı
+            fovBase: 75,
+            fovAim: 45
         };
 
-        // --- SES MOTORU (CODE-GENERATED) ---
+        // --- SES MOTORU ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(type) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination); const now = audioCtx.currentTime;
-            
-            if (type === 'unlock') {
-                osc.type='sine'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(50, now+0.4);
-                gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now+0.4); osc.start(); osc.stop(now+0.4);
-            } else if (type === 'tension') { 
-                // Bekleme anı gerilim sesi
-                osc.type='triangle'; osc.frequency.setValueAtTime(60, now); 
-                gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now+2); 
-                osc.start(); osc.stop(now+2);
-            } else if (type === 'scream') { 
-                // Saldırı sesi
-                osc.type='sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(1200, now+0.8);
-                gain.gain.setValueAtTime(0.5, now); gain.gain.linearRampToValueAtTime(0, now+1.2); 
-                osc.start(); osc.stop(now+1.2);
+
+            if (type === 'gunshot') {
+                // Güçlü silah sesi
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(120, now); osc.frequency.exponentialRampToValueAtTime(10, now+0.15);
+                gain.gain.setValueAtTime(0.6, now); gain.gain.exponentialRampToValueAtTime(0.01, now+0.15);
+                osc.start(); osc.stop(now+0.15);
+                // Mekanik ses
+                const osc2 = audioCtx.createOscillator(); const g2 = audioCtx.createGain();
+                osc2.connect(g2); g2.connect(audioCtx.destination);
+                osc2.type='square'; osc2.frequency.setValueAtTime(60, now);
+                g2.gain.setValueAtTime(0.1, now); g2.gain.linearRampToValueAtTime(0, now+0.1);
+                osc2.start(); osc2.stop(now+0.1);
+            } else if (type === 'unlock') {
+                osc.type='sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.linearRampToValueAtTime(100, now+0.3);
+                gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now+0.3); osc.start(); osc.stop(now+0.3);
+            } else if (type === 'hit') {
+                osc.type='triangle'; osc.frequency.setValueAtTime(200, now); osc.frequency.linearRampToValueAtTime(50, now+0.1);
+                gain.gain.setValueAtTime(0.4, now); gain.gain.linearRampToValueAtTime(0, now+0.1); osc.start(); osc.stop(now+0.1);
             }
         }
 
         let camera, scene, renderer, controls;
-        let moveForward=false, moveBackward=false, moveLeft=false, moveRight=false, isSprinting=false;
+        let moveF=false, moveB=false, moveL=false, moveR=false, isSprinting=false;
         let prevTime = performance.now();
         const velocity = new THREE.Vector3(); const direction = new THREE.Vector3();
 
         let doorGroup = new THREE.Group();
-        let zombieModel = null; let keyModel = null;
-        let hasKey = true;
-        
-        // DURUMLAR: 0:Kapalı, 1:Açılıyor(Anim), 2:Açık(Bekliyor), 3:Kovalıyor
-        let doorState = 0; 
-        let zombieSpottedTime = 0;
-        let isGameOver = false;
+        let zombieModel = null;
+        let keyModel = null;
+        let glockModel = null;
+        let glockMixer = null; 
+        let shootAction = null;
+        let muzzleLight = null;
 
-        const interactionUI = document.getElementById('interaction');
-        const blocker = document.getElementById('blocker');
-        const gameOverScreen = document.getElementById('game-over');
+        // Oyun Durumları
+        let hasKey = true;
+        let hasGun = false;
+        let doorState = 0; 
+        let zombieState = 0; // 0:Bekliyor, 1:Dönüyor, 2:Kovalıyor, 3:Ölü
+        let zombieHP = CONFIG.zombieHealth;
+
+        // Silah & Aim
+        let isAiming = false;
+        let canShoot = true;
+        // Silah Konumları (Kameraya göre)
+        const gunHipPos = new THREE.Vector3(0.35, -0.4, -0.6); // Kalça
+        const gunAimPos = new THREE.Vector3(0, -0.28, -0.4);   // Nişan (Göz hizası) - Model merkezine göre ayarlanmalı
+        const gunCurrentPos = new THREE.Vector3().copy(gunHipPos);
 
         init(); animate();
 
         function init() {
             scene = new THREE.Scene(); scene.background = new THREE.Color(0x050505);
-            scene.fog = new THREE.FogExp2(0x050505, SETTINGS.fogDensity);
+            scene.fog = new THREE.FogExp2(0x050505, 0.08);
 
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 100);
-            camera.position.set(0, 1.7, 12); 
+            camera = new THREE.PerspectiveCamera(CONFIG.fovBase, window.innerWidth/window.innerHeight, 0.1, 100);
+            camera.position.set(0, 1.7, 12);
 
-            // Işıklandırma
-            const ambient = new THREE.AmbientLight(0xffffff, SETTINGS.lightIntensity); scene.add(ambient);
-            const flashLight = new THREE.SpotLight(0xffffff, 8, 55, Math.PI/5, 0.4, 1);
+            const ambient = new THREE.AmbientLight(0xffffff, 0.2); scene.add(ambient);
+            const flashLight = new THREE.SpotLight(0xffffff, 5, 45, Math.PI/6, 0.3, 1);
             flashLight.position.set(0,0,0); flashLight.target.position.set(0,0,-1);
-            flashLight.castShadow=true; flashLight.shadow.bias=-0.0001;
+            flashLight.castShadow=true; 
             camera.add(flashLight); camera.add(flashLight.target); scene.add(camera);
 
             controls = new PointerLockControls(camera, document.body);
-            document.getElementById('instructions').addEventListener('click', ()=>controls.lock());
-            controls.addEventListener('lock', ()=>{blocker.style.display='none';});
-            controls.addEventListener('unlock', ()=>{if(!isGameOver)blocker.style.display='flex';});
+            document.getElementById('blocker').addEventListener('click', ()=>controls.lock());
+            controls.addEventListener('lock', ()=>document.getElementById('blocker').style.display='none');
+            controls.addEventListener('unlock', ()=>{if(zombieState!==3)document.getElementById('blocker').style.display='flex';});
 
-            // --- MAP DOKULARI ---
-            const canvas = document.createElement('canvas'); canvas.width=512; canvas.height=512; const ctx=canvas.getContext('2d');
-            ctx.fillStyle='#333'; ctx.fillRect(0,0,512,512); 
-            ctx.strokeStyle='#111'; ctx.lineWidth=10; ctx.strokeRect(0,0,512,512);
-            // Duvar kirleri
-            for(let i=0;i<60;i++){ctx.fillStyle=`rgba(0,0,0,${Math.random()*0.4})`;ctx.fillRect(Math.random()*512,Math.random()*512,30,30);}
-            const wallTex = new THREE.CanvasTexture(canvas); wallTex.wrapS=wallTex.wrapT=THREE.RepeatWrapping; wallTex.repeat.set(4,4);
-            const wallMat = new THREE.MeshStandardMaterial({map:wallTex, roughness:0.8});
+            // --- MAP ---
+            const cvs = document.createElement('canvas'); cvs.width=512; cvs.height=512; const ctx=cvs.getContext('2d');
+            ctx.fillStyle='#222'; ctx.fillRect(0,0,512,512); 
+            ctx.strokeStyle='#111'; ctx.lineWidth=10; ctx.strokeRect(0,0,512,512); // Grid
+            // Kan lekeleri
+            for(let i=0;i<10;i++){ctx.fillStyle='rgba(50,0,0,0.5)';ctx.beginPath();ctx.arc(Math.random()*512,Math.random()*512,Math.random()*20+10,0,Math.PI*2);ctx.fill();}
+            const mat = new THREE.MeshStandardMaterial({map:new THREE.CanvasTexture(cvs), roughness:0.8});
 
-            // Zemin ve Duvarlar
-            const floor = new THREE.Mesh(new THREE.PlaneGeometry(14,70), wallMat); floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
-            const wallGeo = new THREE.BoxGeometry(1,9,70);
-            const wallL = new THREE.Mesh(wallGeo,wallMat); wallL.position.set(-7,4.5,0); wallL.receiveShadow=wallL.castShadow=true; scene.add(wallL);
-            const wallR = new THREE.Mesh(wallGeo,wallMat); wallR.position.set(7,4.5,0); wallR.receiveShadow=wallR.castShadow=true; scene.add(wallR);
-            const ceil = new THREE.Mesh(new THREE.PlaneGeometry(14,70), new THREE.MeshBasicMaterial({color:0x020202})); ceil.rotation.x=Math.PI/2; ceil.position.y=9; scene.add(ceil);
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(14,60), mat); floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
+            const wGeo = new THREE.BoxGeometry(1,8,60);
+            const wL = new THREE.Mesh(wGeo, mat); wL.position.set(-7,4,0); wL.receiveShadow=true; scene.add(wL);
+            const wR = new THREE.Mesh(wGeo, mat); wR.position.set(7,4,0); wR.receiveShadow=true; scene.add(wR);
+            const ceil = new THREE.Mesh(new THREE.PlaneGeometry(14,60), new THREE.MeshBasicMaterial({color:0x111111})); ceil.rotation.x=Math.PI/2; ceil.position.y=8; scene.add(ceil);
 
-            // --- KAPI DUVARI (GİZLİLİK İÇİN) ---
-            const endZ = -22;
-            const w1 = new THREE.Mesh(new THREE.BoxGeometry(8, 9, 2), wallMat); w1.position.set(-5, 4.5, endZ); w1.castShadow=true; scene.add(w1);
-            const w2 = new THREE.Mesh(new THREE.BoxGeometry(8, 9, 2), wallMat); w2.position.set(5, 4.5, endZ); w2.castShadow=true; scene.add(w2);
-            const w3 = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 2), wallMat); w3.position.set(0, 7.5, endZ); w3.castShadow=true; scene.add(w3);
+            const endZ = -20;
+            const dw1 = new THREE.Mesh(new THREE.BoxGeometry(6,8,1), mat); dw1.position.set(-4,4,endZ); scene.add(dw1);
+            const dw2 = new THREE.Mesh(new THREE.BoxGeometry(6,8,1), mat); dw2.position.set(4,4,endZ); scene.add(dw2);
+            const dw3 = new THREE.Mesh(new THREE.BoxGeometry(2,2,1), mat); dw3.position.set(0,7,endZ); scene.add(dw3);
 
-            // --- MODELLER ---
+            // --- LOADER ---
             const loader = new GLTFLoader();
-            
-            // KAPI
-            loader.load('./Door.glb', (gltf) => {
-                const model = gltf.scene; model.position.set(0.5, 0, 0);
-                doorGroup.add(model); doorGroup.position.set(-0.5, 0, endZ); scene.add(doorGroup);
-            }, undefined, ()=>{
-                // Yedek
-                const d=new THREE.Mesh(new THREE.BoxGeometry(2,5,0.2),new THREE.MeshStandardMaterial({color:0x503010}));
-                d.position.set(1,2.5,0);doorGroup.add(d);doorGroup.position.set(-1,0,endZ);scene.add(doorGroup);
-            });
 
-            // ZOMBİ
-            loader.load('./Zombie.glb', (gltf) => {
-                zombieModel = gltf.scene;
+            loader.load('./Door.glb', (g)=>{
+                const m = g.scene; m.position.set(0.5,0,0);
+                doorGroup.add(m); doorGroup.position.set(-0.5,0,endZ); scene.add(doorGroup);
+            }, undefined, ()=>{const d=new THREE.Mesh(new THREE.BoxGeometry(2,5,0.2),new THREE.MeshStandardMaterial({color:0x503010}));d.position.set(1,2.5,0);doorGroup.add(d);doorGroup.position.set(-1,0,endZ);scene.add(doorGroup);});
+
+            loader.load('./Zombie.glb', (g)=>{
+                zombieModel = g.scene;
                 zombieModel.traverse(o=>{if(o.isMesh)o.castShadow=true;});
-                // %70 Küçültme ve Konum
-                const s = SETTINGS.zombieScale;
-                zombieModel.scale.set(s, s, s); 
-                zombieModel.position.set(0, 0, endZ - 4); // Duvarın arkasında saklı
-                zombieModel.rotation.y = Math.PI;
+                zombieModel.position.set(0, 0, endZ - 4); 
+                zombieModel.rotation.y = 0; // Duvara bakıyor (Arkası dönük)
                 scene.add(zombieModel);
-            }, undefined, ()=>{
-                // Yedek
-                zombieModel=new THREE.Mesh(new THREE.CapsuleGeometry(0.5,1.7),new THREE.MeshStandardMaterial({color:0x33ff33}));
-                zombieModel.position.set(0,0.85,endZ-4);scene.add(zombieModel);
+            }, undefined, ()=>{zombieModel=new THREE.Mesh(new THREE.CapsuleGeometry(0.6,1.8),new THREE.MeshStandardMaterial({color:0x00ff00}));zombieModel.position.set(0,0.9,endZ-4);scene.add(zombieModel);});
+
+            loader.load('./Skeleton Key.glb', (g)=>{
+                keyModel=g.scene; keyModel.scale.set(0.5,0.5,0.5);
+                keyModel.position.set(0.5,-0.5,-0.8); keyModel.rotation.set(0,1.5,0); camera.add(keyModel);
             });
 
-            // ANAHTAR
-            loader.load('./Skeleton Key.glb', (gltf)=>{
-                keyModel=gltf.scene; keyModel.scale.set(0.5,0.5,0.5);
-                keyModel.position.set(0.5,-0.5,-0.8); keyModel.rotation.set(0,1.5,0);
-                camera.add(keyModel);
-            });
+            // --- RIGGED GLOCK 19 ---
+            loader.load('./Rigged Glock 19.glb', (g)=>{
+                glockModel = g.scene;
+                const s = CONFIG.gunScale;
+                glockModel.scale.set(s, s, s);
+                // "Rigged" modeller genelde ters veya farklı açıda gelebilir.
+                // Namluyu öne (-Z) baktırmak için döndürüyoruz.
+                glockModel.rotation.y = Math.PI; 
+                glockModel.visible = false; 
+                camera.add(glockModel);
+
+                muzzleLight = new THREE.PointLight(0xffaa00, 0, 4);
+                muzzleLight.position.set(0, 0.2, -0.6); // Namlu ucu ayarı
+                glockModel.add(muzzleLight);
+
+                // Animasyonları Yükle (Shoot)
+                if(g.animations && g.animations.length > 0){
+                    glockMixer = new THREE.AnimationMixer(glockModel);
+                    // İlk animasyonu shoot olarak varsayıyoruz
+                    shootAction = glockMixer.clipAction(g.animations[0]);
+                    shootAction.setLoop(THREE.LoopOnce); 
+                    shootAction.clampWhenFinished = true;
+                }
+            }, undefined, (err) => console.error("Glock yüklenemedi:", err));
 
             renderer = new THREE.WebGLRenderer({antialias:true}); renderer.setSize(window.innerWidth,window.innerHeight);
             renderer.shadowMap.enabled=true; document.body.appendChild(renderer.domElement);
-            window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
-            document.addEventListener('keydown',onKeyDown); document.addEventListener('keyup',onKeyUp);
+            
+            window.addEventListener('resize', ()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
+            
+            document.addEventListener('keydown', (e)=>{
+                switch(e.code){case 'KeyW':moveF=true;break;case 'KeyA':moveL=true;break;case 'KeyS':moveB=true;break;case 'KeyD':moveR=true;break;case 'ShiftLeft':isSprinting=true;break;case 'KeyE':interact();break;}
+            });
+            document.addEventListener('keyup', (e)=>{
+                switch(e.code){case 'KeyW':moveF=false;break;case 'KeyA':moveL=false;break;case 'KeyS':moveB=false;break;case 'KeyD':moveR=false;break;case 'ShiftLeft':isSprinting=false;break;}
+            });
+            document.addEventListener('mousedown', (e)=>{
+                if(!controls.isLocked) return;
+                if(e.button === 0) shoot(); 
+                if(e.button === 2) isAiming = true;
+            });
+            document.addEventListener('mouseup', (e)=>{ if(e.button===2) isAiming=false; });
         }
-
-        function onKeyDown(e){switch(e.code){case 'KeyW':moveForward=true;break;case 'KeyA':moveLeft=true;break;case 'KeyS':moveBackward=true;break;case 'KeyD':moveRight=true;break;case 'ShiftLeft':isSprinting=true;break;case 'KeyE':interact();break;}}
-        function onKeyUp(e){switch(e.code){case 'KeyW':moveForward=false;break;case 'KeyA':moveLeft=false;break;case 'KeyS':moveBackward=false;break;case 'KeyD':moveRight=false;break;case 'ShiftLeft':isSprinting=false;break;}}
 
         function interact() {
             if(!hasKey || doorState !== 0) return;
-            // Mesafe kontrolü
             if(camera.position.distanceTo(doorGroup.position) < 5) {
-                doorState = 1; hasKey = false; if(keyModel)keyModel.visible=false;
-                document.getElementById('key-status').innerText="YOK"; document.getElementById('key-status').style.color="red";
-                playSound('unlock');
+                doorState = 1; playSound('unlock');
+                if(keyModel) keyModel.visible = false; hasKey = false;
+                setTimeout(()=>{ equipGun(); }, 500);
             }
         }
 
+        function equipGun() {
+            hasGun = true;
+            if(glockModel) {
+                glockModel.visible = true;
+                glockModel.position.copy(gunHipPos);
+            }
+            document.getElementById('status-text').innerText = "HAYATTA KAL";
+            document.getElementById('status-text').style.color = "red";
+            document.getElementById('ammo-counter').style.display = "block";
+        }
+
+        function shoot() {
+            if(!hasGun || !canShoot || !glockModel) return;
+            canShoot = false;
+
+            // Animasyon
+            if(shootAction) { shootAction.stop(); shootAction.play(); }
+            
+            playSound('gunshot');
+            if(muzzleLight) { muzzleLight.intensity = 5; setTimeout(()=>muzzleLight.intensity=0, 50); }
+            
+            // Recoil (Geri tepme)
+            camera.rotation.x += CONFIG.recoil;
+
+            // Raycast Hit Check
+            const ray = new THREE.Raycaster(); ray.setFromCamera(new THREE.Vector2(0,0), camera);
+            if(zombieModel && zombieState !== 3) {
+                const intersects = ray.intersectObject(zombieModel, true);
+                if(intersects.length > 0) {
+                    playSound('hit');
+                    zombieHP--;
+                    zombieModel.position.z -= 0.6; // Impact
+                    const f = document.getElementById('hit-flash');
+                    f.style.display='block'; setTimeout(()=>f.style.display='none', 100);
+                    if(zombieHP <= 0) zombieDeath();
+                }
+            }
+            setTimeout(()=>{ canShoot = true; }, 150); // Fire rate
+        }
+
+        function zombieDeath() {
+            zombieState = 3; 
+            if(zombieModel) {
+                zombieModel.rotation.x = -Math.PI/2; 
+                zombieModel.position.y = 0.2;
+            }
+            document.getElementById('msg').innerText = "BAŞARDIN";
+            document.getElementById('msg').style.color = "#0f0";
+            document.getElementById('blocker').style.display = 'flex';
+            controls.unlock();
+        }
+
         function animate() {
-            if(isGameOver) return; requestAnimationFrame(animate);
+            requestAnimationFrame(animate);
             const time = performance.now(); const delta = (time - prevTime) / 1000; prevTime = time;
 
-            // --- KAPI VE ZOMBİ MANTIĞI ---
-            if(doorState === 1) { 
-                // 1. Aşama: Kapı Açılıyor
-                if(doorGroup.rotation.y > -Math.PI/1.6) doorGroup.rotation.y -= 1.5 * delta;
-                else {
-                    doorState = 2; // Açıldı, bekleme moduna geç
-                    zombieSpottedTime = time; 
-                    playSound('tension'); 
-                }
-            } else if (doorState === 2) { 
-                // 2. Aşama: FAIR PLAY (Bekleme Anı)
-                // Zombi sadece sana bakarak hafifçe sallanır
-                if(zombieModel) zombieModel.rotation.y += Math.sin(time*0.005)*0.02;
+            if(glockMixer) glockMixer.update(delta);
+
+            if(hasGun && glockModel) {
+                const targetPos = isAiming ? gunAimPos : gunHipPos;
+                const targetFov = isAiming ? CONFIG.fovAim : CONFIG.fovBase;
+                glockModel.position.lerp(targetPos, 15 * delta);
+                camera.fov = THREE.MathUtils.lerp(camera.fov, targetFov, 15 * delta);
+                camera.updateProjectionMatrix();
+                document.getElementById('crosshair').style.opacity = isAiming ? '0' : '1';
                 
-                // Süre doldu mu?
-                if(time - zombieSpottedTime > SETTINGS.hesitationTime) {
-                    doorState = 3; // Saldır
-                    playSound('scream'); 
-                }
-            } else if (doorState === 3 && zombieModel) { 
-                // 3. Aşama: Kovalamaca
-                zombieModel.lookAt(camera.position.x, 0, camera.position.z);
-                const dir = new THREE.Vector3().subVectors(camera.position, zombieModel.position).normalize();
-                zombieModel.position.add(dir.multiplyScalar(SETTINGS.zombieSpeed * delta));
-                
-                // Yakalanma
-                if(camera.position.distanceTo(zombieModel.position) < 1.3) {
-                    isGameOver = true; controls.unlock(); gameOverScreen.style.display = 'flex';
+                // Recoil Recovery (Silahı yavaşça aşağı indir)
+                // Basit bir düzeltme:
+                if(!canShoot && camera.rotation.x > 0) camera.rotation.x -= 1 * delta;
+            }
+
+            if(doorState === 1) {
+                if(doorGroup.rotation.y > -Math.PI/1.5) doorGroup.rotation.y -= 1.5 * delta;
+                else { doorState = 2; zombieState = 1; }
+            }
+
+            // ZOMBİ AI
+            if(zombieModel && zombieState !== 3) {
+                if(zombieState === 1) { // Dönüyor
+                    const targetQ = new THREE.Quaternion();
+                    const m = new THREE.Matrix4();
+                    m.lookAt(new THREE.Vector3(camera.position.x, zombieModel.position.y, camera.position.z), zombieModel.position, new THREE.Vector3(0,1,0));
+                    targetQ.setFromRotationMatrix(m);
+                    zombieModel.quaternion.slerp(targetQ, CONFIG.zombieTurnSpeed * delta);
+                    if(zombieModel.quaternion.angleTo(targetQ) < 0.2) zombieState = 2;
+                } else if(zombieState === 2) { // Kovalıyor
+                    zombieModel.lookAt(camera.position.x, 0, camera.position.z);
+                    const dir = new THREE.Vector3().subVectors(camera.position, zombieModel.position).normalize();
+                    zombieModel.position.add(dir.multiplyScalar(CONFIG.zombieSpeed * delta));
+                    if(camera.position.distanceTo(zombieModel.position) < 1.2) {
+                        document.getElementById('msg').innerText = "ÖLDÜN";
+                        document.getElementById('blocker').style.display = 'flex';
+                        controls.unlock();
+                    }
                 }
             }
 
-            // --- OYUNCU HAREKETİ ---
             if(controls.isLocked) {
-                const speedMulti = isSprinting ? SETTINGS.runMultiplier : 1.0;
+                const speed = isSprinting ? CONFIG.runSpeed : CONFIG.walkSpeed;
                 velocity.x -= velocity.x * 10.0 * delta; velocity.z -= velocity.z * 10.0 * delta;
-                direction.z = Number(moveForward)-Number(moveBackward); direction.x = Number(moveRight)-Number(moveLeft); direction.normalize();
-                
-                if (moveForward||moveBackward) velocity.z -= direction.z * SETTINGS.walkSpeed * speedMulti * delta;
-                if (moveLeft||moveRight) velocity.x -= direction.x * SETTINGS.walkSpeed * speedMulti * delta;
-                
+                direction.z = Number(moveF) - Number(moveB); direction.x = Number(moveR) - Number(moveL); direction.normalize();
+                if (moveF || moveB) velocity.z -= direction.z * speed * delta;
+                if (moveL || moveR) velocity.x -= direction.x * speed * delta;
                 controls.moveRight(-velocity.x*delta*0.02); controls.moveForward(-velocity.z*delta*0.02);
-
-                const ray = new THREE.Raycaster(); ray.setFromCamera(new THREE.Vector2(), camera);
-                const hits = ray.intersectObjects([doorGroup], true);
-                interactionUI.style.display = (hits.length>0 && hits[0].distance<5 && doorState===0 && hasKey) ? 'block' : 'none';
+                
+                const r = new THREE.Raycaster(); r.setFromCamera(new THREE.Vector2(), camera);
+                const hits = r.intersectObjects([doorGroup], true);
+                document.getElementById('interaction').style.display = (hits.length>0 && hits[0].distance<5 && doorState===0 && hasKey) ? 'block' : 'none';
             }
             renderer.render(scene, camera);
         }
