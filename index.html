@@ -2,530 +2,314 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CS2 WEB: CORE ENGINE</title>
+    <title>CS2 WEB - ROOT DIR</title>
     <style>
-        /* --- CSS ENGINE UI --- */
-        :root { --primary: #de9b35; --bg: #0f1012; --hud-bg: rgba(0,0,0,0.6); }
-        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; user-select: none; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; user-select: none; }
         
-        /* LAYERS */
-        #game-layer { position: absolute; top: 0; left: 0; z-index: 1; }
-        #ui-layer { position: absolute; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
-        #menu-layer { position: absolute; width: 100%; height: 100%; background: rgba(15,16,18,0.95); z-index: 20; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        /* Loading Screen */
+        #loader-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #de9b35; }
+        .bar-container { width: 300px; height: 5px; background: #333; margin: 20px 0; }
+        .bar-fill { height: 100%; width: 0%; background: #de9b35; transition: width 0.2s; }
+        #error-log { margin-top: 20px; color: #ff5555; font-size: 12px; font-family: monospace; max-width: 80%; text-align: center; }
+        #force-start-btn { display: none; margin-top: 20px; padding: 10px 20px; background: #de9b35; border: none; font-weight: bold; cursor: pointer; }
 
-        /* HUD */
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: #0f0; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 4px #000; }
-        #crosshair::before, #crosshair::after { content: ''; position: absolute; background: rgba(0,255,0,0.5); }
-        #crosshair::before { width: 20px; height: 2px; top: 1px; left: -8px; }
-        #crosshair::after { width: 2px; height: 20px; top: -8px; left: 1px; }
+        /* Game UI */
+        #ui-layer { position: absolute; width: 100%; height: 100%; pointer-events: none; display: none; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: #0f0; transform: translate(-50%, -50%); border-radius: 50%; box-shadow: 0 0 3px #000; }
+        #hud-ammo { position: absolute; bottom: 30px; right: 30px; font-size: 40px; color: #de9b35; font-weight: 900; text-shadow: 2px 2px 0 #000; }
+        #hud-health { position: absolute; bottom: 30px; left: 30px; font-size: 40px; color: #fff; font-weight: 900; text-shadow: 2px 2px 0 #000; }
 
-        .hud-panel { position: absolute; background: var(--hud-bg); color: white; padding: 15px; border-radius: 4px; border-left: 3px solid var(--primary); }
-        #health-panel { bottom: 30px; left: 30px; width: 200px; }
-        #ammo-panel { bottom: 30px; right: 30px; text-align: right; }
-        #health-val { font-size: 32px; font-weight: 800; }
-        #ammo-val { font-size: 40px; font-weight: 800; color: var(--primary); }
-        
-        #killfeed { position: absolute; top: 20px; right: 20px; text-align: right; display: flex; flex-direction: column; gap: 5px; }
-        .kill-item { background: linear-gradient(90deg, transparent, rgba(200,0,0,0.5)); color: white; padding: 5px 10px; font-size: 14px; font-weight: bold; border-right: 2px solid red; animation: fadeOut 4s forwards; }
-
-        #voice-indicator { position: absolute; bottom: 100px; right: 30px; color: #0f0; display: none; font-weight: bold; font-size: 14px; text-transform: uppercase; }
-
-        /* MENU DESIGN */
-        .menu-box { width: 400px; text-align: center; }
-        h1 { color: var(--primary); font-size: 60px; margin: 0; letter-spacing: -2px; text-shadow: 0 0 20px rgba(222,155,53,0.3); }
-        .btn { display: block; width: 100%; padding: 15px; margin: 10px 0; background: transparent; border: 1px solid #444; color: #fff; font-size: 18px; cursor: pointer; transition: 0.2s; text-transform: uppercase; font-weight: bold; }
-        .btn:hover { background: var(--primary); border-color: var(--primary); color: #000; transform: scale(1.02); }
-        .input-group { display: flex; gap: 10px; margin: 20px 0; }
-        input { flex: 1; padding: 15px; background: #222; border: 1px solid #444; color: white; text-align: center; font-family: monospace; }
-        
-        #loading { position: fixed; top:0; left:0; width:100%; height:100%; background: #000; z-index: 999; display: flex; justify-content: center; align-items: center; color: var(--primary); font-family: monospace; }
-
-        @keyframes fadeOut { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; display: none; } }
+        /* Menu */
+        #menu { position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        h1 { color: #fff; font-size: 60px; margin-bottom: 20px; letter-spacing: -2px; }
+        button { padding: 15px 50px; font-size: 20px; cursor: pointer; background: transparent; border: 2px solid #de9b35; color: #fff; margin: 10px; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #de9b35; color: #000; }
     </style>
 </head>
 <body>
 
-    <div id="loading">ENGINE LOADING... %0</div>
-
-    <div id="menu-layer">
-        <div class="menu-box">
-            <h1>CS:WEB</h1>
-            <p style="color:#666; margin-bottom: 30px;">GEMINI PRO BUILD v1.2</p>
-            
-            <div id="host-section">
-                <button class="btn" onclick="Network.hostGame()">ODA OLUŞTUR (HOST)</button>
-                <div id="my-invite-code" style="color: #0f0; margin: 10px; font-family: monospace; display: none;">KODUNUZ: <span id="code-display">...</span></div>
-            </div>
-
-            <div style="height: 1px; background: #333; margin: 20px 0;"></div>
-
-            <div class="input-group">
-                <input type="text" id="invite-input" placeholder="DAVET KODUNU YAPIŞTIR">
-                <button class="btn" style="width: auto;" onclick="Network.joinGame()">BAĞLAN</button>
-            </div>
-            
-            <div style="font-size: 12px; color: #444; margin-top: 20px;">
-                WASD: Hareket | R: Şarjör | G: Konuş (Bas-Konuş) | M: Menü
-            </div>
-        </div>
+    <div id="loader-screen">
+        <h2>ENGINE LOADING...</h2>
+        <div class="bar-container"><div class="bar-fill" id="bar-fill"></div></div>
+        <div id="status-text">Assets initializing...</div>
+        <div id="error-log"></div>
+        <button id="force-start-btn" onclick="Game.forceStart()">SORUNLU BAŞLAT (FORCE START)</button>
     </div>
 
-    <div id="ui-layer" style="display:none;">
+    <div id="menu">
+        <h1>CS:ROOT</h1>
+        <button onclick="Game.startMatch()">OYUNA GİR</button>
+        <div style="color: #aaa; margin-top:10px;">WASD: Git | R: Şarjör | Sol Tık: Ateş</div>
+    </div>
+
+    <div id="ui-layer">
         <div id="crosshair"></div>
-        <div id="health-panel">HP <span id="health-val">100</span></div>
-        <div id="ammo-panel">
-            <div id="ammo-val">20</div>
-            <div style="color:#aaa; font-size:12px;">/ 90 GLOCK-18</div>
-        </div>
-        <div id="killfeed"></div>
-        <div id="voice-indicator">🎤 MİKROFON AÇIK</div>
+        <div id="hud-health">100</div>
+        <div id="hud-ammo">20 <span style="font-size:14px; color:#aaa;">/ 90</span></div>
     </div>
 
-    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js"></script>
-    <script src="https://unpkg.com/three@0.160.0/examples/jsm/controls/PointerLockControls.js"></script>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
 
     <script type="module">
+        import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
         // ==========================================
-        // CORE ENGINE CLASSES
+        // GAME CONFIG & STATE
         // ==========================================
-
-        class AssetManager {
-            constructor() {
-                this.loader = new GLTFLoader();
-                this.assets = {};
-                this.toLoad = [
-                    { name: 'map', url: 'models/map.glb' },
-                    { name: 'player', url: 'models/Guy.glb' },
-                    { name: 'weapon', url: 'models/Pistol.glb' }
-                ];
-            }
-
-            async loadAll(onProgress) {
-                let loaded = 0;
-                for (const item of this.toLoad) {
-                    try {
-                        const gltf = await this.loader.loadAsync(item.url);
-                        this.assets[item.name] = gltf;
-                        loaded++;
-                        if(onProgress) onProgress(Math.floor((loaded / this.toLoad.length) * 100));
-                        console.log(`[ASSET] ${item.name} loaded.`);
-                    } catch (e) {
-                        console.error(`[ERROR] Failed to load ${item.name}. Using placeholder.`, e);
-                        this.createPlaceholder(item.name);
-                    }
-                }
-                document.getElementById('loading').style.display = 'none';
-            }
-
-            createPlaceholder(name) {
-                // Modeller yoksa oyun çökmesin diye placeholder oluşturur
-                const mesh = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshStandardMaterial({color: 0xff0000}));
-                this.assets[name] = { scene: mesh };
-            }
-        }
-
-        class SoundSystem {
-            constructor() {
-                this.isTalking = false;
-                this.localStream = null;
-                this.peers = {}; // Uzaktaki oyuncuların sesleri
-            }
-
-            async initMic() {
-                try {
-                    this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    // Başlangıçta mikrofonu sustur (Push to Talk için)
-                    this.localStream.getAudioTracks()[0].enabled = false;
-                } catch(e) {
-                    console.error("Mikrofon izni verilmedi.");
-                }
-            }
-
-            toggleMic(isActive) {
-                if(!this.localStream) return;
-                this.localStream.getAudioTracks()[0].enabled = isActive;
-                document.getElementById('voice-indicator').style.display = isActive ? 'block' : 'none';
-                this.isTalking = isActive;
-            }
-        }
-
-        class Weapon {
-            constructor(camera, model) {
-                this.camera = camera;
-                this.model = model;
-                this.ammo = 20;
-                this.magSize = 20;
-                this.reserve = 90;
-                this.damage = 25;
-                this.canShoot = true;
-                this.recoil = 0;
-                
-                // Model ayarları
-                if(this.model) {
-                    this.model.position.set(0.3, -0.3, -0.5);
-                    this.model.scale.set(1, 1, 1); // Ölçeklendirme gerekirse burayı değiştir
-                    this.camera.add(this.model);
-                }
-            }
-
-            shoot() {
-                if (!this.canShoot || this.ammo <= 0) return false;
-
-                this.ammo--;
-                this.recoil += 0.05;
-                this.canShoot = false;
-                
-                // ATEŞ EFEKTİ (Basit)
-                if(this.model) this.model.position.z += 0.1; 
-                setTimeout(() => { if(this.model) this.model.position.z -= 0.1; }, 50);
-
-                // UI Güncelle
-                UI.updateAmmo(this.ammo);
-
-                // Ateş hızı
-                setTimeout(() => { this.canShoot = true; }, 150);
-                
-                return true; // Ateş edildi
-            }
-
-            update() {
-                // Recoil Recovery
-                if (this.recoil > 0) {
-                    this.recoil -= 0.002;
-                    this.camera.rotation.x += 0.002; // Kamera yukarı kaysın
-                }
-            }
-
-            reload() {
-                if (this.reserve > 0 && this.ammo < this.magSize) {
-                    this.canShoot = false;
-                    console.log("Reloading...");
-                    setTimeout(() => {
-                        const needed = this.magSize - this.ammo;
-                        const taken = Math.min(needed, this.reserve);
-                        this.ammo += taken;
-                        this.reserve -= taken;
-                        this.canShoot = true;
-                        UI.updateAmmo(this.ammo);
-                    }, 2000); // 2 saniye reload
-                }
-            }
-        }
-
-        class Player {
-            constructor(scene, camera) {
-                this.scene = scene;
-                this.camera = camera;
-                this.velocity = new THREE.Vector3();
-                this.direction = new THREE.Vector3();
-                this.health = 100;
-                this.isDead = false;
-                
-                // Physics params
-                this.speed = 10.0;
-                this.gravity = 30.0;
-                this.jumpHeight = 15.0;
-                this.canJump = false; // Basit zemin kontrolü için
-            }
-
-            update(delta, controls, moveState) {
-                if (this.isDead) return;
-
-                // Sürtünme
-                this.velocity.x -= this.velocity.x * 10.0 * delta;
-                this.velocity.z -= this.velocity.z * 10.0 * delta;
-                this.velocity.y -= this.gravity * delta; // Yer çekimi
-
-                this.direction.z = Number(moveState.forward) - Number(moveState.backward);
-                this.direction.x = Number(moveState.right) - Number(moveState.left);
-                this.direction.normalize();
-
-                if (moveState.forward || moveState.backward) this.velocity.z -= this.direction.z * 100.0 * delta;
-                if (moveState.left || moveState.right) this.velocity.x -= this.direction.x * 100.0 * delta;
-
-                // Hareket uygula
-                controls.moveRight(-this.velocity.x * delta);
-                controls.moveForward(-this.velocity.z * delta);
-                this.camera.position.y += this.velocity.y * delta;
-
-                // Basit Zemin Kontrolü (Harita physics yoksa düşmemek için)
-                if (this.camera.position.y < 1.6) {
-                    this.velocity.y = 0;
-                    this.camera.position.y = 1.6;
-                    this.canJump = true;
-                }
-            }
-            
-            takeDamage(amount) {
-                this.health -= amount;
-                UI.updateHealth(this.health);
-                if(this.health <= 0) this.die();
-            }
-
-            die() {
-                this.isDead = true;
-                alert("ÖLDÜN!");
-                location.reload();
-            }
-        }
-
-        // ==========================================
-        // NETWORK MANAGER (PEERJS)
-        // ==========================================
-        const Network = {
-            peer: null,
-            conn: null,
-            mediaConnection: null,
-            isHost: false,
-            otherPlayers: {}, // { id: { mesh: Mesh, targetPos: Vector3 } }
-
-            init: (id = null) => {
-                Network.peer = id ? new Peer(id) : new Peer();
-                
-                Network.peer.on('open', (myId) => {
-                    console.log('My Peer ID:', myId);
-                    if(Network.isHost) {
-                        document.getElementById('code-display').innerText = myId;
-                        document.getElementById('my-invite-code').style.display = 'block';
-                    }
-                });
-
-                Network.peer.on('connection', (conn) => {
-                    console.log("Birisi bağlandı!");
-                    Network.setupConnection(conn);
-                });
-
-                // Sesli Arama Geldiğinde
-                Network.peer.on('call', (call) => {
-                    call.answer(Engine.sound.localStream);
-                    call.on('stream', remoteStream => {
-                        const audio = new Audio();
-                        audio.srcObject = remoteStream;
-                        audio.play();
-                    });
-                });
-            },
-
-            hostGame: () => {
-                Network.isHost = true;
-                Network.init();
-                UI.hideMenu();
-                Engine.startLoop();
-            },
-
-            joinGame: () => {
-                const hostId = document.getElementById('invite-input').value;
-                if(!hostId) return alert("Kodu gir!");
-                
-                Network.init();
-                const conn = Network.peer.connect(hostId);
-                
-                conn.on('open', () => {
-                    Network.setupConnection(conn);
-                    UI.hideMenu();
-                    Engine.startLoop();
-                    
-                    // Sesli aramayı başlat
-                    if(Engine.sound.localStream) {
-                        const call = Network.peer.call(hostId, Engine.sound.localStream);
-                        call.on('stream', remoteStream => {
-                            const audio = new Audio();
-                            audio.srcObject = remoteStream;
-                            audio.play();
-                        });
-                    }
-                });
-            },
-
-            setupConnection: (conn) => {
-                Network.conn = conn;
-                conn.on('data', (data) => {
-                    Network.handleData(data);
-                });
-            },
-
-            sendData: (data) => {
-                if(Network.conn && Network.conn.open) {
-                    Network.conn.send(data);
-                }
-            },
-
-            handleData: (data) => {
-                // Basit Multiplayer Mantığı: Sadece 1 düşman destekler (Örnek olduğu için)
-                // Gerçek pro'da 'data.id' ile array yönetilir.
-                
-                if(data.type === 'move') {
-                    if(!Network.otherPlayers['enemy']) {
-                        // Düşman modelini oluştur
-                        const enemyMesh = Engine.assets.assets['player'].scene.clone();
-                        Engine.scene.add(enemyMesh);
-                        Network.otherPlayers['enemy'] = { mesh: enemyMesh };
-                    }
-                    const enemy = Network.otherPlayers['enemy'].mesh;
-                    enemy.position.set(data.x, data.y - 1.6, data.z); // Göz hizası düzeltmesi
-                    enemy.rotation.y = data.rot;
-                }
-                
-                if(data.type === 'shoot') {
-                    // Düşman ateş etti sesi çalınabilir
-                    // Basit raycast ile vurulduk mu kontrolü (Normalde sunucuda yapılır)
-                    // Burada hileye açık ama P2P için mecbur.
-                }
-
-                if(data.type === 'hit') {
-                    Engine.player.takeDamage(data.dmg);
-                }
+        const Config = {
+            files: {
+                map: './map.glb',     // AYNI KLASÖRDE OLDUĞU İÇİN ./
+                weapon: './Pistol.glb',
+                player: './guy.glb'
             }
         };
 
-        // ==========================================
-        // UI MANAGER
-        // ==========================================
-        const UI = {
-            hideMenu: () => {
-                document.getElementById('menu-layer').style.display = 'none';
-                document.getElementById('ui-layer').style.display = 'block';
-                Engine.controls.lock();
-            },
-            updateHealth: (val) => document.getElementById('health-val').innerText = val,
-            updateAmmo: (val) => document.getElementById('ammo-val').innerText = val,
-            addKillFeed: (msg) => {
-                const div = document.createElement('div');
-                div.className = 'kill-item';
-                div.innerText = msg;
-                document.getElementById('killfeed').appendChild(div);
-                setTimeout(() => div.remove(), 4000);
-            }
+        const State = {
+            hp: 100,
+            ammo: 20,
+            isMoving: false,
+            canShoot: true
         };
 
         // ==========================================
-        // GAME ENGINE MAIN LOOP
+        // ENGINE CORE
         // ==========================================
         const Engine = {
             scene: null, camera: null, renderer: null, controls: null,
-            player: null, weapon: null, sound: null, assets: null,
-            moveState: { forward: false, backward: false, left: false, right: false },
+            assets: {},
             clock: new THREE.Clock(),
-
+            
+            // Silah Objesi
+            weaponContainer: new THREE.Group(),
+            weaponMesh: null,
+            recoil: 0,
+            
             init: async () => {
-                // Three.js Setup
                 Engine.scene = new THREE.Scene();
-                Engine.scene.background = new THREE.Color(0x87ceeb);
-                Engine.scene.fog = new THREE.Fog(0x87ceeb, 0, 50);
+                Engine.scene.background = new THREE.Color(0x222222);
+                Engine.scene.fog = new THREE.Fog(0x222222, 10, 60);
 
-                Engine.camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-                Engine.camera.position.y = 1.6;
-
+                Engine.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
                 Engine.renderer = new THREE.WebGLRenderer({ antialias: true });
                 Engine.renderer.setSize(window.innerWidth, window.innerHeight);
                 Engine.renderer.shadowMap.enabled = true;
-                document.getElementById('game-layer').appendChild(Engine.renderer.domElement);
+                document.body.appendChild(Engine.renderer.domElement);
 
-                // Lighting
-                const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
-                Engine.scene.add(hemiLight);
-                const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-                dirLight.position.set(50, 200, 100);
+                // Işıklar
+                const ambLight = new THREE.AmbientLight(0xffffff, 0.5);
+                Engine.scene.add(ambLight);
+                const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+                dirLight.position.set(10, 20, 10);
                 dirLight.castShadow = true;
                 Engine.scene.add(dirLight);
 
-                // Controls
+                // Kontroller
                 Engine.controls = new PointerLockControls(Engine.camera, document.body);
-                Engine.setupInputs();
 
-                // Load Assets
-                Engine.assets = new AssetManager();
-                await Engine.assets.loadAll((p) => document.getElementById('loading').innerHTML = `LOADING ASSETS... %${p}`);
+                // Silah Konteyneri (Kameraya bağlı)
+                Engine.camera.add(Engine.weaponContainer);
+                Engine.scene.add(Engine.camera);
 
-                // Setup World
-                const map = Engine.assets.assets['map'].scene;
-                Engine.scene.add(map);
-
-                // Setup Player & Weapon
-                Engine.player = new Player(Engine.scene, Engine.camera);
-                Engine.weapon = new Weapon(Engine.camera, Engine.assets.assets['weapon'].scene);
-                Engine.scene.add(Engine.camera); // Silah kamerada olduğu için kamerayı sahneye ekle
-
-                // Setup Audio
-                Engine.sound = new SoundSystem();
-                Engine.sound.initMic(); // İzin iste
-
-                document.getElementById('menu-layer').style.display = 'flex'; // Menüyü aç
+                // Yükleme Başlat
+                await Engine.loadAssets();
             },
 
-            setupInputs: () => {
-                const onKey = (code, down) => {
-                    switch(code) {
-                        case 'KeyW': Engine.moveState.forward = down; break;
-                        case 'KeyS': Engine.moveState.backward = down; break;
-                        case 'KeyA': Engine.moveState.left = down; break;
-                        case 'KeyD': Engine.moveState.right = down; break;
-                        case 'Space': if(down && Engine.player.canJump) { Engine.player.velocity.y += Engine.player.jumpHeight; Engine.player.canJump = false; } break;
-                        case 'KeyR': if(down) Engine.weapon.reload(); break;
-                        case 'KeyG': Engine.sound.toggleMic(down); break;
+            loadAssets: () => {
+                const loader = new GLTFLoader();
+                const items = Object.entries(Config.files);
+                let loadedCount = 0;
+                const total = items.length;
+
+                // Zaman aşımı kontrolü (5 saniye yüklenmezse buton çıkar)
+                setTimeout(() => {
+                    if(loadedCount < total) {
+                        document.getElementById('error-log').innerText = "UYARI: Modeller yüklenemedi veya çok yavaş. Dosya isimlerini kontrol et veya 'Force Start' yap.";
+                        document.getElementById('force-start-btn').style.display = 'block';
+                    }
+                }, 5000);
+
+                const checkDone = () => {
+                    loadedCount++;
+                    document.getElementById('bar-fill').style.width = (loadedCount / total * 100) + '%';
+                    if(loadedCount === total) {
+                        setTimeout(Game.onLoadComplete, 500);
                     }
                 };
-                document.addEventListener('keydown', (e) => onKey(e.code, true));
-                document.addEventListener('keyup', (e) => onKey(e.code, false));
-                document.addEventListener('mousedown', () => {
-                    if(Engine.controls.isLocked) {
-                        if(Engine.weapon.shoot()) {
-                            // Raycast for shooting logic
-                            Engine.checkHit();
-                            Network.sendData({ type: 'shoot' });
+
+                items.forEach(([key, url]) => {
+                    loader.load(url, 
+                        (gltf) => {
+                            Engine.assets[key] = gltf.scene;
+                            console.log(key + " yüklendi.");
+                            checkDone();
+                        },
+                        undefined,
+                        (err) => {
+                            console.error("Yükleme Hatası:", err);
+                            document.getElementById('status-text').innerText = "Hata: " + url + " bulunamadı!";
+                            // Hata olsa bile oyunun açılması için placeholder oluştur
+                            const box = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshStandardMaterial({color:0xff0000}));
+                            Engine.assets[key] = box; 
+                            checkDone(); // Hata olsa da devam et
                         }
-                    } else {
-                        // Engine.controls.lock(); // Menüden basılması daha sağlıklı
-                    }
-                });
-            },
-
-            checkHit: () => {
-                // Ekranın ortasından Ray at
-                const raycaster = new THREE.Raycaster();
-                raycaster.setFromCamera(new THREE.Vector2(0,0), Engine.camera);
-                
-                // Düşman meshlerini kontrol et
-                const enemies = Object.values(Network.otherPlayers).map(p => p.mesh);
-                const intersects = raycaster.intersectObjects(enemies, true);
-
-                if(intersects.length > 0) {
-                    console.log("VURDUN!");
-                    UI.addKillFeed("Düşmanı Vurdun! (-25 HP)");
-                    Network.sendData({ type: 'hit', dmg: 25 });
-                }
-            },
-
-            startLoop: () => {
-                Engine.renderer.setAnimationLoop(() => {
-                    const delta = Math.min(Engine.clock.getDelta(), 0.1);
-                    
-                    Engine.player.update(delta, Engine.controls, Engine.moveState);
-                    Engine.weapon.update();
-
-                    // Network Update (Her frame değil, kısıtlanabilir ama şimdilik her frame)
-                    if(Network.conn && Network.conn.open) {
-                        const p = Engine.camera.position;
-                        const r = Engine.camera.rotation.y;
-                        Network.sendData({ type: 'move', x: p.x, y: p.y, z: p.z, rot: r });
-                    }
-
-                    Engine.renderer.render(Engine.scene, Engine.camera);
+                    );
                 });
             }
         };
 
-        // GLOBAL START
-        window.Game = Network; // HTML butonları erişebilsin diye
+        // ==========================================
+        // GAMEPLAY LOGIC
+        // ==========================================
+        const Game = {
+            velocity: new THREE.Vector3(),
+            direction: new THREE.Vector3(),
+            move: { f: false, b: false, l: false, r: false },
+
+            forceStart: () => {
+                Game.onLoadComplete();
+            },
+
+            onLoadComplete: () => {
+                document.getElementById('loader-screen').style.display = 'none';
+                document.getElementById('menu').style.display = 'flex';
+                Game.setupWorld();
+            },
+
+            setupWorld: () => {
+                // Harita
+                const map = Engine.assets.map;
+                map.traverse(n => { if(n.isMesh) { n.receiveShadow = true; n.castShadow = true; } });
+                Engine.scene.add(map);
+
+                // Silah Ayarı
+                const pistol = Engine.assets.weapon;
+                pistol.scale.set(1, 1, 1); // Silah çok büyükse burayı 0.1 yap
+                pistol.rotation.y = Math.PI; // Silah tersse burayı sil veya değiştir
+                pistol.position.set(0.2, -0.2, -0.4); // Kameraya göre konumu
+                Engine.weaponMesh = pistol;
+                Engine.weaponContainer.add(pistol);
+
+                // Düşman (Örnek)
+                const enemy = Engine.assets.player.clone();
+                enemy.position.set(5, 0, 5);
+                Engine.scene.add(enemy);
+
+                Game.setupInputs();
+                Game.animate();
+            },
+
+            startMatch: () => {
+                document.getElementById('menu').style.display = 'none';
+                document.getElementById('ui-layer').style.display = 'block';
+                Engine.controls.lock();
+                Engine.camera.position.y = 1.6;
+            },
+
+            setupInputs: () => {
+                document.addEventListener('keydown', (e) => {
+                    switch(e.code) {
+                        case 'KeyW': Game.move.f = true; break;
+                        case 'KeyS': Game.move.b = true; break;
+                        case 'KeyA': Game.move.l = true; break;
+                        case 'KeyD': Game.move.r = true; break;
+                        case 'KeyR': Game.reload(); break;
+                    }
+                });
+                document.addEventListener('keyup', (e) => {
+                    switch(e.code) {
+                        case 'KeyW': Game.move.f = false; break;
+                        case 'KeyS': Game.move.b = false; break;
+                        case 'KeyA': Game.move.l = false; break;
+                        case 'KeyD': Game.move.r = false; break;
+                    }
+                });
+                document.addEventListener('mousedown', () => {
+                    if(Engine.controls.isLocked) Game.shoot();
+                });
+            },
+
+            shoot: () => {
+                if(State.ammo <= 0) return;
+                
+                State.ammo--;
+                document.getElementById('hud-ammo').innerText = State.ammo;
+                
+                // Recoil (Geri tepme)
+                Engine.recoil += 0.1;
+                
+                // Silah animasyonu (Geri git gel)
+                if(Engine.weaponMesh) {
+                    Engine.weaponMesh.position.z += 0.1;
+                    setTimeout(() => Engine.weaponMesh.position.z -= 0.1, 50);
+                }
+            },
+
+            reload: () => {
+                State.ammo = 20;
+                document.getElementById('hud-ammo').innerText = "R...";
+                setTimeout(() => {
+                    document.getElementById('hud-ammo').innerText = State.ammo;
+                }, 1000);
+            },
+
+            animate: () => {
+                requestAnimationFrame(Game.animate);
+                
+                const delta = Math.min(Engine.clock.getDelta(), 0.1);
+
+                // --- FİZİK VE HAREKET ---
+                Game.velocity.x -= Game.velocity.x * 10.0 * delta;
+                Game.velocity.z -= Game.velocity.z * 10.0 * delta;
+                // Game.velocity.y -= 9.8 * delta; // Yerçekimi kapalı şimdilik (Map collider olmadığı için düşersin)
+
+                Game.direction.z = Number(Game.move.f) - Number(Game.move.b);
+                Game.direction.x = Number(Game.move.r) - Number(Game.move.l);
+                Game.direction.normalize();
+
+                if (Game.move.f || Game.move.b) Game.velocity.z -= Game.direction.z * 40.0 * delta;
+                if (Game.move.l || Game.move.r) Game.velocity.x -= Game.direction.x * 40.0 * delta;
+
+                Engine.controls.moveRight(-Game.velocity.x * delta);
+                Engine.controls.moveForward(-Game.velocity.z * delta);
+
+                // --- SİLAH SALLANMASI (SWAY & BOB) ---
+                if(Engine.weaponContainer) {
+                    // Yürürken sallanma (Bobbing)
+                    const isMoving = Game.move.f || Game.move.b || Game.move.l || Game.move.r;
+                    const time = Date.now() * 0.01;
+                    
+                    if(isMoving) {
+                        Engine.weaponContainer.position.y = Math.sin(time) * 0.005; 
+                        Engine.weaponContainer.position.x = Math.cos(time * 0.5) * 0.005;
+                    } else {
+                        // Dururken nefes alma efekti
+                        Engine.weaponContainer.position.y = Math.sin(time * 0.5) * 0.002;
+                        Engine.weaponContainer.position.x = 0;
+                    }
+
+                    // Recoil Recovery
+                    Engine.recoil = Math.max(0, Engine.recoil - delta * 2);
+                    Engine.camera.rotation.x += Engine.recoil * delta * 0.5; // Kamerayı yukarı kaldırır
+                    Engine.weaponContainer.rotation.x = Engine.recoil; 
+                }
+
+                Engine.renderer.render(Engine.scene, Engine.camera);
+            }
+        };
+
+        // Window Helper
+        window.Game = Game;
         Engine.init();
 
     </script>
-    <div id="game-layer"></div>
 </body>
 </html>
