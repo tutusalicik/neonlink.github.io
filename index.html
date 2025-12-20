@@ -2,74 +2,57 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Karanlık Koridor: Final Chapter</title>
+    <title>Karanlık Koridor: Hızlı ve Öfkeli</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Courier New', Courier, monospace; user-select: none; }
+        body { margin: 0; overflow: hidden; background-color: #050505; font-family: 'Courier New', Courier, monospace; user-select: none; }
         
-        /* --- GÖRSEL EFEKTLER (Shader Benzeri CSS Katmanları) --- */
-        
-        /* 1. Vignette (Köşeleri Karartma) */
+        /* --- GÖRSEL EFEKTLER --- */
         #vignette {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(0,0,0,0) 50%, rgba(0,0,0,0.9) 100%);
+            background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.8) 100%);
             pointer-events: none; z-index: 5;
         }
 
-        /* 2. Film Grain (Kumlu Görüntü Animasyonu) */
         #grain {
             position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)" opacity="0.1"/%3E%3C/svg%3E');
-            pointer-events: none; z-index: 4;
+            background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)" opacity="0.05"/%3E%3C/svg%3E');
+            pointer-events: none; z-index: 4; opacity: 0.3;
             animation: grainAnim 0.5s steps(5) infinite;
-            opacity: 0.4;
         }
-        @keyframes grainAnim {
-            0%, 100% { transform:translate(0, 0) }
-            10% { transform:translate(-5%, -10%) }
-            20% { transform:translate(-15%, 5%) }
-            30% { transform:translate(7%, -25%) }
-            40% { transform:translate(-5%, 25%) }
-            50% { transform:translate(-15%, 10%) }
-            60% { transform:translate(15%, 0%) }
-            70% { transform:translate(0%, 15%) }
-            80% { transform:translate(3%, 35%) }
-            90% { transform:translate(-10%, 10%) }
-        }
+        @keyframes grainAnim { 0% { transform:translate(0,0) } 100% { transform:translate(-5%,-5%) } }
 
         /* ARAYÜZ */
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; z-index: 10;
         }
-        #inventory { padding: 25px; color: #d4af37; font-size: 20px; font-weight: bold; text-shadow: 2px 2px 5px #000; }
+        #inventory { padding: 25px; color: #ffcc00; font-size: 22px; font-weight: bold; text-shadow: 2px 2px 5px #000; }
         #interaction {
             position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%);
-            color: #fff; font-size: 16px; display: none; text-align: center; letter-spacing: 2px;
-            text-shadow: 0 0 10px #ff0000;
+            color: #fff; font-size: 18px; display: none; text-align: center; letter-spacing: 2px;
+            background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; border: 1px solid #fff;
         }
         #crosshair {
-            position: absolute; top: 50%; left: 50%; width: 4px; height: 4px;
-            background: rgba(255, 255, 255, 0.5); border-radius: 50%; transform: translate(-50%, -50%); z-index: 6;
-            box-shadow: 0 0 4px #fff;
+            position: absolute; top: 50%; left: 50%; width: 6px; height: 6px;
+            background: rgba(255, 255, 255, 0.8); border-radius: 50%; transform: translate(-50%, -50%); z-index: 6;
+            box-shadow: 0 0 6px #fff;
         }
         
         /* EKRANLAR */
         #blocker {
-            position: absolute; width: 100%; height: 100%; background: #000;
+            position: absolute; width: 100%; height: 100%; background: #111;
             display: flex; justify-content: center; align-items: center; flex-direction: column;
-            z-index: 999; pointer-events: all; color: #666;
+            z-index: 999; pointer-events: all; color: #ddd;
         }
         #instructions { font-size: 24px; cursor: pointer; text-align: center; }
-        #instructions span { color: #a00; font-size: 40px; font-weight: bold; }
+        #instructions span { color: #f00; font-size: 40px; font-weight: bold; }
         
         #game-over {
             display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; color: #c00; z-index: 1000;
+            background: #200; color: #f00; z-index: 1000;
             justify-content: center; align-items: center; flex-direction: column;
             font-size: 100px; font-weight: bold; text-shadow: 0 0 30px #f00;
-            animation: pulse 1s infinite;
         }
-        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; text-shadow: 0 0 50px red; } 100% { opacity: 0.8; } }
 
     </style>
 </head>
@@ -77,14 +60,13 @@
 
     <div id="vignette"></div>
     <div id="grain"></div>
-    
-    <div id="game-over">ÖLDÜN</div>
+    <div id="game-over">YAKALANDIN</div>
 
     <div id="blocker">
         <div id="instructions">
             <span>BAŞLAT</span><br/><br/>
-            Karanlık Koridor<br/>
-            (Kulaklık Tak)
+            (Farenin hassasiyeti ve hız arttırıldı)<br/>
+            W,A,S,D = Hareket | SHIFT = Depar
         </div>
     </div>
 
@@ -92,7 +74,7 @@
 
     <div id="ui-layer">
         <div id="inventory">ENVANTER: <span id="key-status">Skeleton Key</span> 🗝️</div>
-        <div id="interaction">[E] KİLİDİ AÇ</div>
+        <div id="interaction">[E] KAPIYI AÇ</div>
     </div>
 
     <script type="importmap">
@@ -109,7 +91,16 @@
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-        // --- SES (Procedural) ---
+        // --- AYARLAR ---
+        const SETTINGS = {
+            walkSpeed: 800.0,    // Önceki: 400 (2 kat hızlandı)
+            runMultiplier: 2.5,  // Koşma çarpanı
+            zombieSpeed: 11.0,   // Zombi de hızlandı (Adil olsun)
+            fogDensity: 0.05,    // Önceki: 0.12 (Daha az sis, daha çok görüş)
+            lightIntensity: 0.6  // Ortam ışığı
+        };
+
+        // --- SES ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(type) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -120,32 +111,19 @@
             const now = audioCtx.currentTime;
 
             if (type === 'unlock') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.linearRampToValueAtTime(1000, now+0.1);
-                gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now+0.5);
-                osc.start(); osc.stop(now+0.5);
+                osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.linearRampToValueAtTime(100, now+0.3);
+                gain.gain.setValueAtTime(0.3, now); gain.gain.linearRampToValueAtTime(0, now+0.3);
+                osc.start(); osc.stop(now+0.3);
             } else if (type === 'scream') {
-                // Canavar sesi (Noise benzeri)
                 osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(100, now);
-                osc.frequency.linearRampToValueAtTime(800, now+0.2);
-                // Modülasyon
-                const lfo = audioCtx.createOscillator();
-                lfo.frequency.value = 50;
-                const lfoGain = audioCtx.createGain();
-                lfoGain.gain.value = 500;
-                lfo.connect(lfoGain);
-                lfoGain.connect(osc.frequency);
-                lfo.start(); lfo.stop(now+1);
-
-                gain.gain.setValueAtTime(0.5, now);
-                gain.gain.linearRampToValueAtTime(0, now+1.5);
-                osc.start(); osc.stop(now+1.5);
+                osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(800, now+0.5);
+                gain.gain.setValueAtTime(0.5, now); gain.gain.linearRampToValueAtTime(0, now+1.0);
+                osc.start(); osc.stop(now+1.0);
             }
         }
 
-        // --- DEĞİŞKENLER ---
         let camera, scene, renderer, controls;
-        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, isSprinting = false;
         let prevTime = performance.now();
         const velocity = new THREE.Vector3();
         const direction = new THREE.Vector3();
@@ -153,16 +131,10 @@
         let doorGroup = new THREE.Group();
         let zombieModel = null;
         let keyModel = null;
-
-        // Oyun Durumu
         let hasKey = true;
-        let doorState = 0; // 0:Kapalı, 1:Açılıyor
+        let doorState = 0; 
         let chaseMode = false;
         let isGameOver = false;
-
-        // Ayarlar
-        const ZOMBIE_SPEED = 9.0;
-        const KILL_DISTANCE = 1.8; // Bu mesafeye girince ölürsün
 
         const interactionUI = document.getElementById('interaction');
         const blocker = document.getElementById('blocker');
@@ -174,24 +146,21 @@
 
         function init() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x020202);
-            // Korku sisi (Daha karanlık)
-            scene.fog = new THREE.FogExp2(0x020202, 0.12);
+            scene.background = new THREE.Color(0x101010); // Arka plan biraz grileşti
+            scene.fog = new THREE.FogExp2(0x101010, SETTINGS.fogDensity); // Sis azaltıldı
 
-            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
-            camera.position.set(0, 1.7, 10); // Kapıdan uzakta başla
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 1.7, 10);
 
-            // --- IŞIKLANDIRMA ---
-            const ambient = new THREE.AmbientLight(0x404040, 0.1); // Çok loş
+            // --- IŞIKLANDIRMA (Geliştirildi) ---
+            const ambient = new THREE.AmbientLight(0xffffff, SETTINGS.lightIntensity); 
             scene.add(ambient);
 
-            // El Feneri
-            const flashLight = new THREE.SpotLight(0xffffff, 5, 30, Math.PI/6, 0.5, 2);
+            const flashLight = new THREE.SpotLight(0xffffff, 8, 45, Math.PI/5, 0.3, 1);
             flashLight.position.set(0, 0, 0);
             flashLight.target.position.set(0, 0, -1);
             flashLight.castShadow = true;
-            flashLight.shadow.mapSize.width = 1024;
-            flashLight.shadow.mapSize.height = 1024;
+            flashLight.shadow.bias = -0.0001;
             camera.add(flashLight);
             camera.add(flashLight.target);
             scene.add(camera);
@@ -202,105 +171,79 @@
             controls.addEventListener('lock', () => { blocker.style.display = 'none'; });
             controls.addEventListener('unlock', () => { if(!isGameOver) blocker.style.display = 'flex'; });
 
-            // --- MAP İNŞAATI (Koridor ve Duvarlar) ---
-            const textureLoader = new THREE.TextureLoader();
-            
-            // Basit Texture Üretimi (Grid)
+            // --- DOKULAR VE MAP ---
             const canvas = document.createElement('canvas');
-            canvas.width = 256; canvas.height = 256;
+            canvas.width = 512; canvas.height = 512;
             const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0,0,256,256);
-            ctx.strokeStyle = '#333'; ctx.lineWidth=4; ctx.strokeRect(0,0,256,256);
-            // Kan lekesi gibi detay
-            ctx.fillStyle = '#300'; ctx.fillRect(50, 50, 20, 20);
+            // Daha açık renkli duvarlar (Işık yansısın diye)
+            ctx.fillStyle = '#444'; ctx.fillRect(0,0,512,512); 
+            ctx.strokeStyle = '#222'; ctx.lineWidth=10; ctx.strokeRect(0,0,512,512);
+            // Biraz detay
+            for(let i=0;i<20;i++){
+                ctx.fillStyle = Math.random()>0.5 ? '#333' : '#555';
+                ctx.fillRect(Math.random()*500, Math.random()*500, 50, 50);
+            }
             const wallTex = new THREE.CanvasTexture(canvas);
             wallTex.wrapS = THREE.RepeatWrapping; wallTex.wrapT = THREE.RepeatWrapping;
-            wallTex.repeat.set(5, 5);
+            wallTex.repeat.set(4, 4);
 
-            const wallMat = new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.8 });
+            const wallMat = new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.6 });
 
-            // 1. Zemin
-            const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 50), wallMat);
+            // Zemin
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(12, 60), wallMat);
             floor.rotation.x = -Math.PI / 2;
             floor.receiveShadow = true;
             scene.add(floor);
 
-            // 2. Yan Duvarlar
-            const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(1, 6, 50), wallMat);
-            wallLeft.position.set(-5.5, 3, 0);
-            wallLeft.receiveShadow = true; wallLeft.castShadow = true;
-            scene.add(wallLeft);
+            // Duvarlar
+            const wallGeo = new THREE.BoxGeometry(1, 8, 60);
+            const wallL = new THREE.Mesh(wallGeo, wallMat); wallL.position.set(-6, 4, 0);
+            wallL.receiveShadow = true; wallL.castShadow = true;
+            scene.add(wallL);
+            const wallR = new THREE.Mesh(wallGeo, wallMat); wallR.position.set(6, 4, 0);
+            wallR.receiveShadow = true; wallR.castShadow = true;
+            scene.add(wallR);
 
-            const wallRight = new THREE.Mesh(new THREE.BoxGeometry(1, 6, 50), wallMat);
-            wallRight.position.set(5.5, 3, 0);
-            wallRight.receiveShadow = true; wallRight.castShadow = true;
-            scene.add(wallRight);
-
-            // 3. Tavan
-            const ceil = new THREE.Mesh(new THREE.PlaneGeometry(10, 50), new THREE.MeshBasicMaterial({color:0x050505}));
-            ceil.rotation.x = Math.PI / 2; ceil.position.y = 6;
+            // Tavan
+            const ceil = new THREE.Mesh(new THREE.PlaneGeometry(12, 60), new THREE.MeshBasicMaterial({color:0x111111}));
+            ceil.rotation.x = Math.PI / 2; ceil.position.y = 8;
             scene.add(ceil);
 
-            // 4. KAPI DUVARI (End Wall) - ÖNEMLİ: Zombiyi saklayan duvar
-            // Kapının olduğu yerde bir delik olması için duvarı 3 parçadan yapıyoruz.
-            const endWallZ = -15;
-            
-            // Sol Parça
-            const w1 = new THREE.Mesh(new THREE.BoxGeometry(4, 6, 1), wallMat);
-            w1.position.set(-3, 3, endWallZ);
-            w1.castShadow = true; w1.receiveShadow = true;
-            scene.add(w1);
-            
-            // Sağ Parça
-            const w2 = new THREE.Mesh(new THREE.BoxGeometry(4, 6, 1), wallMat);
-            w2.position.set(3, 3, endWallZ);
-            w2.castShadow = true; w2.receiveShadow = true;
-            scene.add(w2);
+            // Kapı Duvarı (Zombi Saklayan)
+            const endZ = -20;
+            const w1 = new THREE.Mesh(new THREE.BoxGeometry(5, 8, 1), wallMat); w1.position.set(-3.5, 4, endZ);
+            w1.castShadow = true; scene.add(w1);
+            const w2 = new THREE.Mesh(new THREE.BoxGeometry(5, 8, 1), wallMat); w2.position.set(3.5, 4, endZ);
+            w2.castShadow = true; scene.add(w2);
+            const w3 = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 1), wallMat); w3.position.set(0, 6.5, endZ);
+            w3.castShadow = true; scene.add(w3);
 
-            // Üst Parça (Lintel)
-            const w3 = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 1), wallMat);
-            w3.position.set(0, 5, endWallZ); // Kapının üstü
-            w3.castShadow = true; w3.receiveShadow = true;
-            scene.add(w3);
-
-            // --- MODELLER ---
+            // --- MODEL YÜKLEME ---
             const loader = new GLTFLoader();
 
-            // KAPI
             loader.load('./Door.glb', (gltf) => {
                 const model = gltf.scene;
-                // Kapıyı duvarın ortasındaki boşluğa yerleştir
-                model.position.set(0.5, 0, 0); // Pivot ayarı (Modele göre değişebilir)
-                
+                model.position.set(0.5, 0, 0);
                 doorGroup.add(model);
-                doorGroup.position.set(-0.5, 0, endWallZ); // Duvar hizası
+                doorGroup.position.set(-0.5, 0, endZ);
                 scene.add(doorGroup);
-            }, undefined, (e) => {
-                // Yedek Kapı (Eğer dosya yoksa)
-                const d = new THREE.Mesh(new THREE.BoxGeometry(2, 4, 0.2), new THREE.MeshStandardMaterial({color:0x332211}));
-                d.position.set(1, 2, 0);
-                doorGroup.add(d);
-                doorGroup.position.set(-1, 0, endWallZ);
-                scene.add(doorGroup);
+            }, undefined, () => {
+                // Yedek
+                const d = new THREE.Mesh(new THREE.BoxGeometry(2, 5, 0.2), new THREE.MeshStandardMaterial({color:0x503010}));
+                d.position.set(1, 2.5, 0); doorGroup.add(d); doorGroup.position.set(-1, 0, endZ); scene.add(doorGroup);
             });
 
-            // ZOMBİ (Duvarın arkasında saklı)
             loader.load('./Zombie.glb', (gltf) => {
                 zombieModel = gltf.scene;
-                zombieModel.traverse(o => { if(o.isMesh) o.castShadow = true; });
-                
-                // Duvarın (-15) arkasında başlatıyoruz. Gözükmemeli.
-                zombieModel.position.set(0, 0, endWallZ - 3); 
-                zombieModel.rotation.y = Math.PI; // Bize bakıyor
+                zombieModel.traverse(o=>{if(o.isMesh)o.castShadow=true;});
+                zombieModel.position.set(0, 0, endZ - 4); // Duvarın arkasında
+                zombieModel.rotation.y = Math.PI;
                 scene.add(zombieModel);
             }, undefined, () => {
-                // Yedek Zombi
-                zombieModel = new THREE.Mesh(new THREE.CapsuleGeometry(0.5, 1.8), new THREE.MeshStandardMaterial({color:0x00ff00}));
-                zombieModel.position.set(0, 0.9, endWallZ - 3);
-                scene.add(zombieModel);
+                zombieModel = new THREE.Mesh(new THREE.CapsuleGeometry(0.6, 1.8), new THREE.MeshStandardMaterial({color:0x33ff33}));
+                zombieModel.position.set(0, 0.9, endZ - 4); scene.add(zombieModel);
             });
 
-            // ANAHTAR (FPS)
             loader.load('./Skeleton Key.glb', (gltf) => {
                 keyModel = gltf.scene;
                 keyModel.scale.set(0.5, 0.5, 0.5);
@@ -311,7 +254,7 @@
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true; // Gölgeler açık
+            renderer.shadowMap.enabled = true;
             document.body.appendChild(renderer.domElement);
 
             window.addEventListener('resize', () => {
@@ -329,6 +272,7 @@
                 case 'KeyA': moveLeft = true; break;
                 case 'KeyS': moveBackward = true; break;
                 case 'KeyD': moveRight = true; break;
+                case 'ShiftLeft': isSprinting = true; break;
                 case 'KeyE': interact(); break;
             }
         }
@@ -338,90 +282,73 @@
                 case 'KeyA': moveLeft = false; break;
                 case 'KeyS': moveBackward = false; break;
                 case 'KeyD': moveRight = false; break;
+                case 'ShiftLeft': isSprinting = false; break;
             }
         }
 
         function interact() {
             if(!hasKey || doorState !== 0) return;
-            // Kapıya mesafe kontrolü
-            if(camera.position.distanceTo(doorGroup.position) < 4) {
-                startDoorEvent();
+            if(camera.position.distanceTo(doorGroup.position) < 5) {
+                doorState = 1;
+                hasKey = false;
+                if(keyModel) keyModel.visible = false;
+                document.getElementById('key-status').innerText = "YOK";
+                document.getElementById('key-status').style.color = "red";
+                playSound('unlock');
+                setTimeout(()=>playSound('scream'), 500);
             }
         }
 
-        function startDoorEvent() {
-            doorState = 1; // Açılma başladı
-            hasKey = false;
-            if(keyModel) keyModel.visible = false;
-            document.getElementById('key-status').innerText = "YOK";
-            document.getElementById('key-status').style.color = "red";
-            
-            playSound('unlock');
-            playSound('scream'); // Çığlık
-        }
-
         function animate() {
-            if(isGameOver) return; // Oyun bittiyse döngüyü durdur
-            
+            if(isGameOver) return;
             requestAnimationFrame(animate);
 
             const time = performance.now();
             const delta = (time - prevTime) / 1000;
             prevTime = time;
 
-            // --- KAPI HAREKETİ ---
+            // Kapı
             if(doorState === 1) {
-                // Kapı yavaşça açılıyor
-                if(doorGroup.rotation.y > -Math.PI / 1.5) {
-                    doorGroup.rotation.y -= 2 * delta;
-                } else {
-                    // Kapı tamamen açılınca Zombi aktifleşir
-                    chaseMode = true;
-                }
+                if(doorGroup.rotation.y > -Math.PI/1.5) doorGroup.rotation.y -= 2 * delta;
+                else chaseMode = true;
             }
 
-            // --- ZOMBİ YAPAY ZEKASI (GERİCİ HAREKETLER) ---
+            // Zombi
             if(chaseMode && zombieModel) {
-                // 1. Bize dön
                 zombieModel.lookAt(camera.position.x, 0, camera.position.z);
-                
-                // 2. Hareket (Koşma)
                 const dir = new THREE.Vector3().subVectors(camera.position, zombieModel.position).normalize();
-                zombieModel.position.x += dir.x * ZOMBIE_SPEED * delta;
-                zombieModel.position.z += dir.z * ZOMBIE_SPEED * delta;
+                zombieModel.position.add(dir.multiplyScalar(SETTINGS.zombieSpeed * delta));
+                
+                // Titreme efekti
+                if(Math.random()>0.7) zombieModel.position.x += (Math.random()-0.5)*0.3;
 
-                // 3. Glitch Efekti (Gerici titreme)
-                // Zombi koşarken rastgele sağa sola ışınlanır gibi titresin
-                if(Math.random() > 0.8) {
-                    zombieModel.position.x += (Math.random() - 0.5) * 0.2;
-                }
-
-                // 4. ÖLDÜRME KONTROLÜ
-                const dist = camera.position.distanceTo(zombieModel.position);
-                if(dist < KILL_DISTANCE) {
-                    gameOver();
+                if(camera.position.distanceTo(zombieModel.position) < 1.5) {
+                    isGameOver = true;
+                    controls.unlock();
+                    gameOverScreen.style.display = 'flex';
                 }
             }
 
-            // --- OYUNCU HAREKETİ ---
+            // Hareket (Hızlandırıldı)
             if(controls.isLocked) {
+                const speedMulti = isSprinting ? SETTINGS.runMultiplier : 1.0;
+                
                 velocity.x -= velocity.x * 10.0 * delta;
                 velocity.z -= velocity.z * 10.0 * delta;
                 direction.z = Number(moveForward) - Number(moveBackward);
                 direction.x = Number(moveRight) - Number(moveLeft);
                 direction.normalize();
 
-                if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
-                if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
+                if (moveForward || moveBackward) velocity.z -= direction.z * SETTINGS.walkSpeed * speedMulti * delta;
+                if (moveLeft || moveRight) velocity.x -= direction.x * SETTINGS.walkSpeed * speedMulti * delta;
 
-                controls.moveRight(-velocity.x * delta * 0.015);
-                controls.moveForward(-velocity.z * delta * 0.015);
+                controls.moveRight(-velocity.x * delta * 0.02);
+                controls.moveForward(-velocity.z * delta * 0.02);
 
-                // UI Kontrolü (Raycaster)
                 const ray = new THREE.Raycaster();
                 ray.setFromCamera(new THREE.Vector2(), camera);
                 const hits = ray.intersectObjects([doorGroup], true);
-                if(hits.length > 0 && hits[0].distance < 4 && doorState === 0 && hasKey) {
+                if(hits.length > 0 && hits[0].distance < 5 && doorState === 0 && hasKey) {
                     interactionUI.style.display = 'block';
                 } else {
                     interactionUI.style.display = 'none';
@@ -430,15 +357,6 @@
 
             renderer.render(scene, camera);
         }
-
-        function gameOver() {
-            isGameOver = true;
-            controls.unlock();
-            gameOverScreen.style.display = 'flex';
-            // Ekranı kırmızıya boya (Korku efekti)
-            document.body.style.backgroundColor = "#500";
-        }
-
     </script>
 </body>
 </html>
