@@ -3,93 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CS2 WEB: GRANDMASTER ENGINE</title>
+    <title>CS2 WEB: AK-47 UPDATE</title>
     <style>
-        /* --- CORE VISUALS --- */
-        :root { --gold: #ffd700; --dark: #1a1a1a; --danger: #ff2a2a; }
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        canvas { display: block; }
+        /* --- MODERN CS2 UI STYLE --- */
+        :root { --accent: #6dcff6; --bg-glass: rgba(16, 20, 24, 0.9); --hud-bg: rgba(0,0,0,0.6); --crit: #ff4444; }
+        * { box-sizing: border-box; user-select: none; font-family: 'Segoe UI', sans-serif; }
+        body { margin: 0; overflow: hidden; background: #000; color: white; }
 
-        /* LOADING OVERLAY */
-        #loader { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: #000; z-index: 9999; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; color: var(--gold);
-        }
-        .load-text { font-size: 24px; letter-spacing: 5px; animation: pulse 1.5s infinite; }
-        .progress-box { width: 400px; height: 4px; background: #333; margin-top: 20px; }
-        .progress-bar { width: 0%; height: 100%; background: var(--gold); transition: width 0.1s; }
-        #debug-log { margin-top: 10px; color: #666; font-family: monospace; font-size: 12px; }
+        /* LOADING */
+        #loader { position: fixed; top:0; left:0; width:100%; height:100%; background: #0b0c0f; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+        .load-txt { margin-top: 20px; font-weight: bold; letter-spacing: 2px; color: #aaa; }
 
-        /* MAIN MENU */
-        #menu-layer { position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-        .logo { font-size: 80px; color: #fff; font-weight: 900; font-style: italic; text-shadow: 0 0 20px var(--gold); margin-bottom: 20px; }
-        .menu-btn { 
-            padding: 20px 60px; font-size: 20px; background: transparent; color: #fff; 
-            border: 2px solid var(--gold); cursor: pointer; margin: 10px; font-weight: bold; 
-            text-transform: uppercase; transition: 0.3s; position: relative; overflow: hidden;
-        }
-        .menu-btn:hover { background: var(--gold); color: #000; box-shadow: 0 0 30px rgba(255, 215, 0, 0.4); }
-
-        /* GAME HUD */
-        #hud-layer { position: absolute; width: 100%; height: 100%; pointer-events: none; display: none; }
-        #crosshair { 
-            position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; 
-            background: #0f0; transform: translate(-50%, -50%); border-radius: 50%; 
-            box-shadow: 0 0 4px #000;
-        }
-        .ch-line { position: absolute; background: rgba(0, 255, 0, 0.6); }
-        .ch-h { width: 24px; height: 2px; top: 1px; left: -10px; }
-        .ch-v { width: 2px; height: 24px; top: -10px; left: 1px; }
-
-        #health-display { position: absolute; bottom: 40px; left: 40px; display: flex; align-items: flex-end; }
-        .hp-val { font-size: 60px; color: #fff; font-weight: 900; line-height: 1; }
-        .hp-icon { font-size: 20px; color: var(--danger); margin-right: 10px; font-weight: bold; }
+        /* NEW MENU (DASHBOARD) */
+        #menu-layer { position: absolute; width:100%; height:100%; background: radial-gradient(circle, rgba(40,40,50,0.9), #000); z-index: 100; display: none; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .dashboard { display: flex; gap: 40px; }
         
-        #ammo-display { position: absolute; bottom: 40px; right: 40px; text-align: right; }
-        .ammo-val { font-size: 60px; color: var(--gold); font-weight: 900; line-height: 1; }
-        .reserve-val { font-size: 20px; color: #888; font-weight: bold; }
+        .profile-card { width: 300px; background: var(--bg-glass); padding: 30px; border-radius: 10px; border-left: 5px solid var(--accent); display: flex; flex-direction: column; justify-content: space-between; }
+        .avatar { width: 80px; height: 80px; background: #333; border-radius: 50%; margin-bottom: 20px; border: 2px solid var(--accent); }
+        .rank-info h2 { margin: 0; font-size: 30px; }
+        .rank-info p { color: #888; margin: 0; }
 
-        /* DAMAGE FEEDBACK */
-        #damage-flash { position: absolute; top:0; left:0; width:100%; height:100%; background: red; opacity: 0; pointer-events: none; transition: opacity 0.1s; }
+        .play-panel { display: flex; flex-direction: column; gap: 15px; }
+        .play-btn { 
+            width: 300px; padding: 20px; background: linear-gradient(90deg, #1e2329, #16191d); 
+            border: 1px solid #333; color: white; font-size: 18px; font-weight: bold; 
+            text-align: left; cursor: pointer; transition: 0.3s; display: flex; justify-content: space-between;
+        }
+        .play-btn:hover { border-color: var(--accent); background: #252a30; transform: translateX(10px); }
+        .play-btn span { color: var(--accent); }
 
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        /* HUD & CROSSHAIR */
+        #hud-layer { position: absolute; width:100%; height:100%; pointer-events: none; display: none; }
+        
+        #crosshair-wrapper { position: absolute; top:50%; left:50%; transform: translate(-50%, -50%); transition: 0.1s; }
+        #crosshair { width: 4px; height: 4px; background: #0f0; border-radius: 50%; box-shadow: 0 0 3px #000; }
+        /* Dynamic Crosshair Gap */
+        .ch-gap { position: absolute; background: rgba(0,255,0,0.8); transition: 0.1s; }
+        .cg-l { width: 10px; height: 2px; left: -15px; top: 1px; }
+        .cg-r { width: 10px; height: 2px; right: -15px; top: 1px; }
+        .cg-t { width: 2px; height: 10px; top: -15px; left: 1px; }
+        .cg-b { width: 2px; height: 10px; bottom: -15px; left: 1px; }
+
+        .firing .cg-l { left: -25px; } 
+        .firing .cg-r { right: -25px; }
+        .firing .cg-t { top: -25px; }
+        .firing .cg-b { bottom: -25px; }
+
+        #stat-bar { 
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); 
+            width: 600px; display: flex; justify-content: space-between; 
+            background: linear-gradient(90deg, transparent, rgba(0,0,0,0.8), transparent); 
+            padding: 10px 50px;
+        }
+        .stat-box { text-align: center; }
+        .stat-val { font-size: 40px; font-weight: 900; line-height: 1; }
+        .stat-label { font-size: 12px; color: #888; letter-spacing: 2px; }
+        
+        #hp-val { color: var(--accent); }
+        #ammo-val { color: #ffd700; }
+
+        /* DAMAGE VIGNETTE */
+        #damage-vignette { position: absolute; width:100%; height:100%; box-shadow: inset 0 0 0 0 var(--crit); transition: 0.1s; pointer-events: none; }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
     <div id="loader">
-        <div class="load-text">TITAN ENGINE v6.0</div>
-        <div class="progress-box"><div class="progress-bar" id="p-bar"></div></div>
-        <div id="debug-log">Initializing Core Systems...</div>
+        <div class="spinner"></div>
+        <div class="load-txt">LOADING RESOURCES...</div>
+        <div id="debug-text" style="font-size:10px; color:#444; margin-top:10px;"></div>
     </div>
 
     <div id="menu-layer">
-        <div class="logo">CS:WEB</div>
-        <div style="display: flex; gap: 20px;">
-            <button class="menu-btn" onclick="Game.hostGame()">ODA KUR (HOST)</button>
-            <button class="menu-btn" onclick="UI.showJoin()">BAĞLAN (JOIN)</button>
+        <div class="dashboard">
+            <div class="profile-card">
+                <div>
+                    <div class="avatar"></div>
+                    <div class="rank-info">
+                        <h2>PLAYER</h2>
+                        <p>Global Elite</p>
+                    </div>
+                </div>
+                <div style="font-size: 12px; color:#555;">ID: 765611980...</div>
+            </div>
+
+            <div class="play-panel">
+                <button class="play-btn" onclick="Game.startHost()">
+                    ODA OLUŞTUR <span>HOST</span>
+                </button>
+                <div id="host-code-display" style="display:none; color:var(--accent); font-family:monospace; background:#000; padding:10px;">...</div>
+
+                <button class="play-btn" onclick="UI.showJoin()">
+                    ODA KODU GİR <span>JOIN</span>
+                </button>
+                <input type="text" id="join-input" placeholder="KOD: CS-XXXX" style="display:none; padding:10px; background:#111; border:1px solid #444; color:white;">
+                <button id="join-confirm" onclick="Game.startJoin()" style="display:none; background:var(--accent); border:none; padding:10px; font-weight:bold; cursor:pointer;">BAĞLAN</button>
+
+                <button class="play-btn" onclick="Game.startPractice()">
+                    BOT ANTRENMANI <span>OFFLINE</span>
+                </button>
+            </div>
         </div>
-        <div id="join-input-area" style="display:none; margin-top:20px;">
-            <input type="text" id="room-code" placeholder="ODA KODU (örn: CS-123)" style="padding:15px; width:300px; text-align:center; font-size:18px;">
-            <button class="menu-btn" style="padding:15px 30px;" onclick="Game.joinGame()">GİR</button>
-        </div>
-        <div id="room-info" style="color:var(--gold); margin-top:20px; font-size:24px; font-family:monospace; display:none;"></div>
     </div>
 
     <div id="hud-layer">
-        <div id="damage-flash"></div>
-        <div id="crosshair">
-            <div class="ch-line ch-h"></div>
-            <div class="ch-line ch-v"></div>
+        <div id="damage-vignette"></div>
+        
+        <div id="crosshair-wrapper">
+            <div id="crosshair"></div>
+            <div class="ch-gap cg-l"></div>
+            <div class="ch-gap cg-r"></div>
+            <div class="ch-gap cg-t"></div>
+            <div class="ch-gap cg-b"></div>
         </div>
-        <div id="health-display">
-            <div class="hp-icon">✚</div>
-            <div class="hp-val" id="ui-hp">100</div>
-        </div>
-        <div id="ammo-display">
-            <div class="ammo-val" id="ui-ammo">30</div>
-            <div class="reserve-val">/ 90</div>
+
+        <div id="stat-bar">
+            <div class="stat-box">
+                <div class="stat-val" id="hp-val">100</div>
+                <div class="stat-label">HEALTH</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-val" id="ammo-val">30</div>
+                <div class="stat-label">AK-47</div>
+            </div>
         </div>
     </div>
 
@@ -108,392 +147,269 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
-        /* * =================================================================
-         * GLOBAL CONFIGURATION (BURADAN AYARLARI YAPABİLİRSİN)
-         * =================================================================
-         */
-        const Config = {
-            playerSpeed: 6.0,      // Oyuncu koşma hızı (Çok hızlıysa düşür)
-            mouseSensitivity: 0.002,
-            
-            // SİLAH AYARLARI (Görünmüyorsa burayla oyna)
-            weapon: {
-                scale: 0.15,        // Silah boyutu (Büyütmek için 0.5 yap)
-                position: { x: 0.25, y: -0.35, z: -0.6 }, // Sağ/Sol, Yukarı/Aşağı, İleri/Geri
-                rotationOffset: { x: 0, y: Math.PI, z: 0 } // Silah tersse y: 0 yap
-            },
-
-            // ADAM (BOT) AYARLARI
-            npc: {
-                scale: 1.0,         // Adam çok büyükse 0.01 yap, küçükse 1.5 yap
-                positionFix: -1.6   // Yere basma ayarı
-            }
+        /* ===================================================================
+        AYARLAR (SİLAHIN YAMUKSA BURADAN DÜZELT)
+        ===================================================================
+        */
+        const WEAPON_SETTINGS = {
+            scale: 0.12,          // AK-47 genelde büyüktür, 0.1 - 0.2 arası dene
+            x: 0.25,              // Sağ/Sol (Pozitif sağ)
+            y: -0.25,             // Yukarı/Aşağı (Negatif aşağı)
+            z: -0.5,              // İleri/Geri (Negatif ileri)
+            rotationY: Math.PI,   // Silah tersse bunu 0 yap veya Math.PI yap
+            fireRate: 0.1         // Saniye başı mermi (0.1 = Çok hızlı tarama)
         };
 
-        /* ================================================================= */
-
-        // CORE SYSTEMS
-        const Sys = {
+        const SYS = {
             scene: null, camera: null, renderer: null, controls: null,
-            clock: new THREE.Clock(),
             assets: {},
-            sounds: {},
-            entities: [], // Bots & Players
-            mixer: null, // Animation mixer
+            entities: [],
+            lastShot: 0,
+            isFiring: false,
+            recoil: { x:0, y:0 },
+            clock: new THREE.Clock()
         };
 
-        // GAME STATE
-        const State = {
-            hp: 100,
-            ammo: 30,
-            isDead: false,
-            isPlaying: false
-        };
+        const STATE = { hp: 100, ammo: 30, maxAmmo: 90 };
+        const INPUT = { w:false, a:false, s:false, d:false };
 
-        // INPUT STATE
-        const Input = { w: false, a: false, s: false, d: false };
-
-        /* * 1. AUDIO MANAGER (SES SİSTEMİ)
-         */
-        const AudioSys = {
-            init: () => {
-                Sys.sounds['shoot'] = new Audio('shoot.mp3');
-                Sys.sounds['headshot'] = new Audio('headshot.mp3');
-                Sys.sounds['shoot'].volume = 0.4;
-                Sys.sounds['headshot'].volume = 0.8;
-            },
-            play: (name) => {
-                if(Sys.sounds[name]) {
-                    Sys.sounds[name].currentTime = 0;
-                    Sys.sounds[name].play().catch(e => console.warn("Audio play blocked", e));
-                }
-            }
-        };
-
-        /* * 2. INITIALIZATION & LOADING
-         */
         init();
 
         async function init() {
-            // Scene Setup
-            Sys.scene = new THREE.Scene();
-            Sys.scene.background = new THREE.Color(0x87CEEB); // Sky Blue
-            Sys.scene.fog = new THREE.Fog(0x87CEEB, 0, 50);
+            // Scene
+            SYS.scene = new THREE.Scene();
+            SYS.scene.background = new THREE.Color(0x1a1d21);
+            SYS.scene.fog = new THREE.FogExp2(0x1a1d21, 0.02);
 
-            Sys.camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.01, 1000); // 0.01 near clip (Silah kesilmesin diye)
-            Sys.camera.position.y = 1.7;
+            SYS.camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.01, 1000);
+            SYS.camera.position.y = 1.7;
 
-            Sys.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-            Sys.renderer.setSize(window.innerWidth, window.innerHeight);
-            Sys.renderer.shadowMap.enabled = true;
-            document.body.appendChild(Sys.renderer.domElement);
+            SYS.renderer = new THREE.WebGLRenderer({ antialias: true });
+            SYS.renderer.setSize(window.innerWidth, window.innerHeight);
+            SYS.renderer.shadowMap.enabled = true;
+            document.body.appendChild(SYS.renderer.domElement);
 
-            // Lighting (Kritik: Adamın görünmesi için)
-            const ambLight = new THREE.AmbientLight(0xffffff, 0.7); // Ortam ışığı (karanlığı önler)
-            Sys.scene.add(ambLight);
-            
-            const sun = new THREE.DirectionalLight(0xffffff, 1.5); // Güneş
-            sun.position.set(20, 50, 20);
+            // Lights
+            const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
+            SYS.scene.add(hemi);
+            const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+            sun.position.set(20,50,20);
             sun.castShadow = true;
-            Sys.scene.add(sun);
+            SYS.scene.add(sun);
 
-            Sys.controls = new PointerLockControls(Sys.camera, document.body);
-            
-            // Events
-            setupInputs();
-            window.addEventListener('resize', onResize);
+            SYS.controls = new PointerLockControls(SYS.camera, document.body);
 
-            // Audio Init
-            AudioSys.init();
+            // Listeners
+            setupEvents();
 
-            // Load Assets
-            await loadContent();
+            // Load
+            await loadAssets();
         }
 
-        async function loadContent() {
+        async function loadAssets() {
             const loader = new GLTFLoader();
             const files = {
-                'map': 'map.glb',
-                'guy': 'guy.glb',     // Küçük harf
-                'pistol': 'Pistol.glb' // Büyük harf
+                map: './map.glb',
+                guy: './guy.glb',
+                ak47: './Ak47.glb' // Büyük A ile
             };
 
-            const keys = Object.keys(files);
-            let loaded = 0;
-
-            for (const key of keys) {
+            for (const [key, url] of Object.entries(files)) {
                 try {
-                    document.getElementById('debug-log').innerText = `Loading ${key}...`;
-                    const gltf = await loader.loadAsync(files[key]);
-                    Sys.assets[key] = gltf.scene;
-                    loaded++;
-                    document.getElementById('p-bar').style.width = (loaded / keys.length * 100) + '%';
-                    console.log(`[OK] ${key} loaded.`);
-                } catch (err) {
-                    console.error(`[ERR] ${key} failed.`, err);
-                    document.getElementById('debug-log').innerText = `Error loading ${key}. Check console.`;
-                    // Fail-safe: Create placeholder if missing
-                    const box = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.5,0.5), new THREE.MeshBasicMaterial({color:0xff0000}));
-                    Sys.assets[key] = box;
+                    document.getElementById('debug-text').innerText = `Loading ${key}...`;
+                    const gltf = await loader.loadAsync(url);
+                    SYS.assets[key] = gltf.scene;
+                } catch(e) {
+                    console.error("Yükleme Hatası:", key);
+                    // Placeholder (Hata olursa oyun donmasın diye kutu koyuyoruz)
+                    const box = new THREE.Mesh(new THREE.BoxGeometry(0.2,0.2,1), new THREE.MeshBasicMaterial({color:'red'}));
+                    SYS.assets[key] = box;
                 }
             }
 
-            // Finish Loading
             document.getElementById('loader').style.display = 'none';
             document.getElementById('menu-layer').style.display = 'flex';
         }
 
-        /* * 3. GAME LOGIC & WORLD BUILDING
-         */
         window.Game = {
-            hostGame: () => {
-                const code = "CS-" + Math.floor(Math.random() * 9000 + 1000);
-                startWorld(true);
-                // Network (PeerJS) logic would act here as host
-                document.getElementById('room-info').innerText = "ODA KODU: " + code;
-                document.getElementById('room-info').style.display = "block";
-                alert(`Oda kuruldu! Kodun: ${code}`);
+            startPractice: () => {
+                startGame();
             },
-            joinGame: () => {
-                const code = document.getElementById('room-code').value;
-                if(!code) return alert("Kodu yaz!");
-                startWorld(false);
-            }
+            hostGame: () => {
+                // PeerJS Host Kodları buraya gelir (Önceki kodlardaki gibi)
+                alert("Oda oluşturuldu: CS-DEMO");
+                document.getElementById('host-code-display').style.display='block';
+                document.getElementById('host-code-display').innerText = "CS-DEMO";
+                startGame();
+            },
+            startHost: () => { Game.hostGame(); }, // Alias
+            startJoin: () => { startGame(); } // Demo join
         };
 
         window.UI = {
-            showJoin: () => { document.getElementById('join-input-area').style.display = 'block'; }
-        };
+            showJoin: () => {
+                document.getElementById('join-input').style.display = 'block';
+                document.getElementById('join-confirm').style.display = 'block';
+            }
+        }
 
-        function startWorld(isHost) {
+        function startGame() {
             document.getElementById('menu-layer').style.display = 'none';
             document.getElementById('hud-layer').style.display = 'block';
-            Sys.controls.lock();
-            State.isPlaying = true;
+            SYS.controls.lock();
 
-            // 1. ADD MAP
-            const map = Sys.assets['map'];
+            // 1. Haritayı Ekle
+            const map = SYS.assets.map;
             map.traverse(o => { if(o.isMesh) { o.receiveShadow = true; o.castShadow = true; } });
-            map.scale.set(1,1,1);
-            Sys.scene.add(map);
+            SYS.scene.add(map);
 
-            // 2. SETUP WEAPON (VIEWMODEL)
+            // 2. Silahı (AK-47) Ekle
             setupWeapon();
 
-            // 3. SPAWN BOTS
-            spawnBot(new THREE.Vector3(5, 0, 10)); // Bot 1
-            spawnBot(new THREE.Vector3(-5, 0, 10)); // Bot 2
+            // 3. Bot Ekle
+            spawnBot(new THREE.Vector3(5, 0, 10));
+            spawnBot(new THREE.Vector3(-5, 0, 10));
 
-            // Start Loop
             animate();
         }
 
         function setupWeapon() {
-            const gun = Sys.assets['pistol'];
-            // --- SİLAH AYARLARI (CONFİG'DEN ÇEKER) ---
-            gun.scale.set(Config.weapon.scale, Config.weapon.scale, Config.weapon.scale);
-            gun.position.set(Config.weapon.position.x, Config.weapon.position.y, Config.weapon.position.z);
-            gun.rotation.set(Config.weapon.rotationOffset.x, Config.weapon.rotationOffset.y, Config.weapon.rotationOffset.z);
+            const gun = SYS.assets.ak47;
             
-            // Silahın gölgelerini kapat (FPS kamerada garip durur)
-            gun.traverse(o => { if(o.isMesh) { o.castShadow = false; o.receiveShadow = false; } });
+            // EL VE POSİSYON AYARLARI
+            gun.scale.set(WEAPON_SETTINGS.scale, WEAPON_SETTINGS.scale, WEAPON_SETTINGS.scale);
+            gun.position.set(WEAPON_SETTINGS.x, WEAPON_SETTINGS.y, WEAPON_SETTINGS.z);
+            gun.rotation.set(0, WEAPON_SETTINGS.rotationY, 0);
 
-            // Kamera içine grup oluştur (Recoil için)
-            Sys.gunGroup = new THREE.Group();
-            Sys.gunGroup.add(gun);
-            Sys.camera.add(Sys.gunGroup);
-            Sys.scene.add(Sys.camera);
+            // Kamera grubuna ekle (Recoil için)
+            SYS.gunGroup = new THREE.Group();
+            SYS.gunGroup.add(gun);
+            SYS.camera.add(SYS.gunGroup);
+            SYS.scene.add(SYS.camera);
         }
 
         function spawnBot(pos) {
-            const botModel = Sys.assets['guy'].clone();
+            const bot = SYS.assets.guy.clone();
+            bot.scale.set(1,1,1); // Bot boyutunu buradan ayarla
+            bot.position.copy(pos);
+            SYS.scene.add(bot);
             
-            // --- BOT GÖRÜNMEZ İSE BUNLARI DÜZELTİR ---
-            botModel.scale.set(Config.npc.scale, Config.npc.scale, Config.npc.scale);
-            
-            // Model içindeki materyalleri kontrol et
-            botModel.traverse((node) => {
-                if(node.isMesh) {
-                    node.castShadow = true;
-                    node.receiveShadow = true;
-                    // Eğer model siyahsa materyali düzelt
-                    if(!node.material.map) node.material.color.setHex(0x555555);
-                }
-            });
-
-            botModel.position.copy(pos);
-            botModel.position.y = Config.npc.positionFix; // Yere oturtma
-
-            Sys.scene.add(botModel);
-
-            // Bot nesnesi
-            const bot = {
-                mesh: botModel,
-                hp: 100,
-                lastFire: 0
-            };
-            Sys.entities.push(bot);
+            SYS.entities.push({ mesh: bot, hp: 100 });
         }
 
-        /* * 4. MAIN LOOP (FİZİK VE YAPAY ZEKA)
-         */
         function animate() {
             requestAnimationFrame(animate);
-            if(!State.isPlaying) return;
+            const dt = SYS.clock.getDelta();
 
-            const dt = Sys.clock.getDelta();
-            
-            // --- OYUNCU HAREKETİ ---
-            const speed = Config.playerSpeed;
+            // --- OTOMATİK TARAMA (SPRAY) ---
+            if(SYS.isFiring && SYS.controls.isLocked) {
+                const now = SYS.clock.getElapsedTime();
+                if(now - SYS.lastShot > WEAPON_SETTINGS.fireRate) {
+                    fireWeapon();
+                    SYS.lastShot = now;
+                }
+            }
+
+            // --- HAREKET ---
+            const speed = 8.0;
             const velocity = new THREE.Vector3();
-            
-            if(Input.w) velocity.z += speed * dt;
-            if(Input.s) velocity.z -= speed * dt;
-            if(Input.a) velocity.x -= speed * dt;
-            if(Input.d) velocity.x += speed * dt;
+            if(INPUT.w) velocity.z += speed * dt;
+            if(INPUT.s) velocity.z -= speed * dt;
+            if(INPUT.a) velocity.x -= speed * dt;
+            if(INPUT.d) velocity.x += speed * dt;
 
-            Sys.controls.moveRight(velocity.x);
-            Sys.controls.moveForward(velocity.z);
+            SYS.controls.moveRight(velocity.x);
+            SYS.controls.moveForward(velocity.z);
 
-            // --- BOT AI (YAPAY ZEKA) ---
-            Sys.entities.forEach((bot, index) => {
-                if(bot.hp <= 0) return;
-
-                // 1. Oyuncuya Bak
-                bot.mesh.lookAt(Sys.camera.position.x, bot.mesh.position.y, Sys.camera.position.z);
-
-                // 2. Mesafe Kontrolü
-                const dist = bot.mesh.position.distanceTo(Sys.camera.position);
+            // --- SİLAH EFEKTLERİ ---
+            if(SYS.gunGroup) {
+                // Nefes alma (Bobbing)
+                const time = Date.now() * 0.003;
+                const bobX = Math.cos(time) * 0.001;
+                const bobY = Math.sin(time * 2) * 0.001;
                 
-                // 3. Ateş Etme
-                if(dist < 20 && Date.now() - bot.lastFire > 1500) { // 1.5 saniyede bir
-                    bot.lastFire = Date.now();
-                    playerTakeDamage(15);
-                    // Silah sesi (Uzaklık efekti olmadan basit çalar)
-                    AudioSys.play('shoot');
+                // Recoil Recovery (Tepme düzeltme)
+                SYS.recoil.x = Math.max(0, SYS.recoil.x - dt * 2); // Geri gitme düzelmesi
+                SYS.recoil.y = Math.max(0, SYS.recoil.y - dt * 5); // Namlu kalkması düzelmesi
+
+                SYS.gunGroup.position.z = bobY + SYS.recoil.x; // Geri tepme uygula
+                SYS.gunGroup.rotation.x = SYS.recoil.y; // Namlu kaldır
+                SYS.gunGroup.position.y = Math.sin(time) * 0.002; // Hafif sallanma
+            }
+
+            // --- BOT AI ---
+            SYS.entities.forEach(bot => {
+                if(bot.hp > 0) {
+                    bot.mesh.lookAt(SYS.camera.position.x, 0, SYS.camera.position.z);
+                    // Basit takip
+                    const dist = bot.mesh.position.distanceTo(SYS.camera.position);
+                    if(dist > 5) bot.mesh.translateZ(2 * dt); // Yürü
                 }
             });
 
-            // --- SİLAH ANIMASYONU (SWAY & RECOIL) ---
-            if(Sys.gunGroup) {
-                // Nefes alma efekti
-                const time = Date.now() * 0.002;
-                Sys.gunGroup.position.y = Math.sin(time) * 0.002;
-                
-                // Recoil Recovery
-                Sys.gunGroup.rotation.x *= 0.9;
-                Sys.gunGroup.position.z *= 0.9;
-            }
-
-            Sys.renderer.render(Sys.scene, Sys.camera);
+            SYS.renderer.render(SYS.scene, SYS.camera);
         }
 
-        /* * 5. COMBAT & EVENTS
-         */
-        function shootWeapon() {
-            if(State.ammo <= 0) return;
-            State.ammo--;
-            document.getElementById('ui-ammo').innerText = State.ammo;
+        function fireWeapon() {
+            if(STATE.ammo <= 0) return;
+            STATE.ammo--;
+            document.getElementById('ammo-val').innerText = STATE.ammo;
 
-            // 1. Ses
-            AudioSys.play('shoot');
+            // Görsel Efektler
+            document.getElementById('crosshair-wrapper').classList.add('firing');
+            setTimeout(() => document.getElementById('crosshair-wrapper').classList.remove('firing'), 50);
 
-            // 2. Recoil Animasyonu
-            if(Sys.gunGroup) {
-                Sys.gunGroup.rotation.x += 0.1; // Namlu kalkar
-                Sys.gunGroup.position.z += 0.05; // Geri teper
-            }
+            // Recoil (Geri Tepme) Artır
+            SYS.recoil.x += 0.05; // Geri
+            SYS.recoil.y += 0.1; // Yukarı
 
-            // 3. Raycast (Vuruş Kontrolü)
+            // Raycast
             const ray = new THREE.Raycaster();
-            ray.setFromCamera(new THREE.Vector2(0,0), Sys.camera);
+            ray.setFromCamera(new THREE.Vector2(0,0), SYS.camera);
+            
+            const targets = SYS.entities.map(e => e.mesh);
+            const hits = ray.intersectObjects(targets, true);
+            
+            if(hits.length > 0) {
+                // Vuruldu efekti
+                const hitObj = hits[0].object;
+                hitObj.material = new THREE.MeshBasicMaterial({color: 0xff0000});
+                setTimeout(() => {
+                    // Eski rengine (veya texture'a) dönemezsek gri yap
+                    hitObj.material = new THREE.MeshStandardMaterial({color:0x555555});
+                }, 50);
 
-            const botMeshes = Sys.entities.map(b => b.mesh);
-            const intersects = ray.intersectObjects(botMeshes, true);
-
-            if(intersects.length > 0) {
-                const hitObj = intersects[0].object;
-                
-                // Botu bul
-                const botRoot = findParentBot(hitObj);
-                if(botRoot) {
-                    // Headshot Kontrolü (Basit yükseklik kontrolü)
-                    const hitPoint = intersects[0].point;
-                    const isHeadshot = hitPoint.y > (botRoot.position.y + 1.4); // Yüksekse kafadır
-                    
-                    if(isHeadshot) {
-                        AudioSys.play('headshot');
-                        killBot(botRoot);
-                    } else {
-                        // Gövde vuruşu (Şimdilik tek atışta ölsün)
-                        killBot(botRoot); 
+                // Bot bul ve can azalt
+                // (Burada hiyerarşiyi tarayıp doğru botu bulmak lazım ama basitçe:)
+                const ent = SYS.entities.find(e => e.mesh === hits[0].object.parent || e.mesh === hits[0].object);
+                if(ent) {
+                    ent.hp -= 20;
+                    if(ent.hp <= 0) {
+                        ent.mesh.rotation.x = -Math.PI/2; // Ölme animasyonu
+                        ent.mesh.position.y = 0.2;
                     }
                 }
             }
         }
 
-        function findParentBot(mesh) {
-            // Tıklanan parça (kol, bacak) hangi bota ait?
-            let curr = mesh;
-            while(curr.parent && curr.parent !== Sys.scene) {
-                curr = curr.parent;
-            }
-            return curr; // Botun ana grubu
-        }
-
-        function killBot(botMesh) {
-            // Botu sahneden sil veya yatır
-            botMesh.rotation.x = -Math.PI / 2; // Yere düşme
-            botMesh.position.y = 0.2;
+        function setupEvents() {
+            document.addEventListener('keydown', e => {
+                if(e.key.toLowerCase() === 'w') INPUT.w = true;
+                if(e.key.toLowerCase() === 's') INPUT.s = true;
+                if(e.key.toLowerCase() === 'a') INPUT.a = true;
+                if(e.key.toLowerCase() === 'd') INPUT.d = true;
+                if(e.key.toLowerCase() === 'r') { STATE.ammo = 30; document.getElementById('ammo-val').innerText=30; }
+            });
+            document.addEventListener('keyup', e => {
+                if(e.key.toLowerCase() === 'w') INPUT.w = false;
+                if(e.key.toLowerCase() === 's') INPUT.s = false;
+                if(e.key.toLowerCase() === 'a') INPUT.a = false;
+                if(e.key.toLowerCase() === 'd') INPUT.d = false;
+            });
             
-            // Listeden düşür (Logic olarak)
-            const botData = Sys.entities.find(b => b.mesh === botMesh);
-            if(botData) botData.hp = 0;
-        }
-
-        function playerTakeDamage(dmg) {
-            State.hp -= dmg;
-            document.getElementById('ui-hp').innerText = State.hp;
-            
-            // Kırmızı Ekran
-            const flash = document.getElementById('damage-flash');
-            flash.style.opacity = 0.5;
-            setTimeout(() => flash.style.opacity = 0, 100);
-
-            if(State.hp <= 0) {
-                State.isDead = true;
-                Sys.controls.unlock();
-                alert("ÖLDÜN! F5 AT.");
-                location.reload();
-            }
-        }
-
-        function setupInputs() {
-            document.addEventListener('keydown', (e) => {
-                switch(e.key.toLowerCase()) {
-                    case 'w': Input.w = true; break;
-                    case 's': Input.s = true; break;
-                    case 'a': Input.a = true; break;
-                    case 'd': Input.d = true; break;
-                }
-            });
-            document.addEventListener('keyup', (e) => {
-                switch(e.key.toLowerCase()) {
-                    case 'w': Input.w = false; break;
-                    case 's': Input.s = false; break;
-                    case 'a': Input.a = false; break;
-                    case 'd': Input.d = false; break;
-                }
-            });
-            document.addEventListener('mousedown', () => {
-                if(Sys.controls.isLocked) shootWeapon();
-            });
-        }
-
-        function onResize() {
-            Sys.camera.aspect = window.innerWidth / window.innerHeight;
-            Sys.camera.updateProjectionMatrix();
-            Sys.renderer.setSize(window.innerWidth, window.innerHeight);
+            // Tarama için MouseDown/Up
+            document.addEventListener('mousedown', () => { if(SYS.controls.isLocked) SYS.isFiring = true; });
+            document.addEventListener('mouseup', () => { SYS.isFiring = false; });
         }
 
     </script>
