@@ -2,9 +2,9 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Karanlık Koridor: Nightmare Edition</title>
+    <title>Koridor: Görünür Karanlık</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Courier New', Courier, monospace; user-select: none; }
+        body { margin: 0; overflow: hidden; background-color: #050505; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
         
         /* Arayüz */
         #ui-layer {
@@ -13,73 +13,64 @@
         }
 
         #inventory { 
-            padding: 20px; 
-            color: #d4af37; 
-            font-size: 22px; 
-            text-shadow: 2px 2px 4px #000; 
-            font-weight: bold;
-            opacity: 0.8;
+            padding: 25px; color: #ffcc00; font-size: 24px; font-weight: bold; 
+            text-shadow: 2px 2px 0px #000; letter-spacing: 1px;
         }
 
         #interaction {
             position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%);
-            color: #fff; font-size: 16px; display: none; text-align: center;
-            text-shadow: 0 0 10px #ff0000; background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 4px; border: 1px solid #333;
+            color: #fff; font-size: 18px; display: none; text-align: center;
+            background: rgba(0, 0, 0, 0.7); padding: 10px 20px; border: 1px solid #fff; border-radius: 4px;
         }
 
         #crosshair {
-            position: absolute; top: 50%; left: 50%; width: 6px; height: 6px;
-            background: rgba(255, 255, 255, 0.4); border-radius: 50%; transform: translate(-50%, -50%); z-index: 5;
-            box-shadow: 0 0 4px white;
+            position: absolute; top: 50%; left: 50%; width: 8px; height: 8px;
+            background: rgba(255, 255, 255, 0.8); border-radius: 50%; 
+            transform: translate(-50%, -50%); z-index: 5; box-shadow: 0 0 5px white;
         }
 
-        /* Başlangıç ve Bitiş Ekranları */
+        /* Başlangıç Ekranı */
         #blocker {
-            position: absolute; width: 100%; height: 100%; background: #000;
+            position: absolute; width: 100%; height: 100%; background: #111;
             display: flex; justify-content: center; align-items: center; flex-direction: column;
-            z-index: 999; pointer-events: all; color: #ccc; transition: opacity 2s;
+            z-index: 999; pointer-events: all; color: #ddd;
         }
-        
-        #instructions { font-size: 24px; cursor: pointer; text-align: center; line-height: 1.8; }
-        #instructions span { font-size: 40px; color: #ff3333; font-weight: bold; letter-spacing: 5px; }
-        .sub-text { font-size: 14px; color: #666; margin-top: 20px;}
+        #instructions { font-size: 20px; text-align: center; line-height: 2; cursor: pointer; }
+        #instructions h1 { font-size: 50px; color: #c00; margin: 0; text-transform: uppercase; letter-spacing: 5px; }
 
         #game-over {
             display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, #500 0%, #000 90%); color: #ff0000; z-index: 1000;
+            background: #500; color: #fff; z-index: 1000;
             justify-content: center; align-items: center; flex-direction: column;
-            font-size: 80px; font-weight: bold; text-shadow: 0 0 30px black; letter-spacing: 10px;
+            font-size: 80px; font-weight: 900;
         }
         
-        /* Stamina Barı (Koşma) */
-        #stamina-container {
-            position: absolute; bottom: 20px; left: 20px; width: 200px; height: 10px; background: #333; border: 1px solid #555;
+        #stamina-bar-container {
+            position: absolute; bottom: 30px; left: 30px; width: 250px; height: 15px; 
+            background: rgba(0,0,0,0.5); border: 2px solid #555; border-radius: 10px; overflow: hidden;
         }
-        #stamina-bar { width: 100%; height: 100%; background: #fff; transition: width 0.1s; }
+        #stamina-bar { width: 100%; height: 100%; background: #fff; transition: width 0.1s linear; }
 
     </style>
 </head>
 <body>
 
-    <div id="game-over">ÖLDÜN</div>
+    <div id="game-over">YAKALANDIN</div>
     
     <div id="blocker">
         <div id="instructions">
-            <span>BAŞLA</span><br/>
-            (Kulaklık Tavsiye Edilir)<br/><br/>
-            Hareket: W, A, S, D<br/>
-            Koş: SHIFT<br/>
-            Etkileşim: E<br/>
-            <div class="sub-text">Tıklayarak kilitle</div>
+            <h1>KAÇIŞ</h1>
+            <p>OYUNA BAŞLAMAK İÇİN TIKLA</p>
+            <p>(W, A, S, D = Hareket | SHIFT = Koş | E = Etkileşim)</p>
         </div>
     </div>
 
     <div id="crosshair"></div>
 
     <div id="ui-layer">
-        <div id="inventory">ANAHTAR: <span id="key-status">VAR</span> 🗝️</div>
-        <div id="interaction">[E] Kilidi Aç</div>
-        <div id="stamina-container"><div id="stamina-bar"></div></div>
+        <div id="inventory">ANAHTAR: <span id="key-status" style="color:#0f0;">VAR</span> 🗝️</div>
+        <div id="interaction">[E] KAPIYI AÇ</div>
+        <div id="stamina-bar-container"><div id="stamina-bar"></div></div>
     </div>
 
     <script type="importmap">
@@ -96,10 +87,8 @@
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-        // --- SES MOTORU (Web Audio API) ---
-        // Basit sesleri kodla üretiyoruz (Dosya boyutu şişmesin diye)
+        // --- SES SİSTEMİ (Web Audio API) ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
         function playSound(type) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
@@ -107,31 +96,70 @@
             osc.connect(gainNode);
             gainNode.connect(audioCtx.destination);
 
+            const now = audioCtx.currentTime;
+            
             if (type === 'unlock') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
-                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-            } 
-            else if (type === 'creak') {
-                // Gıcırtı benzeri ses (Testere dişi dalga)
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+                gainNode.gain.setValueAtTime(0.3, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
+                osc.start(); osc.stop(now + 0.2);
+            } else if (type === 'creak') {
                 osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(100, audioCtx.currentTime);
-                osc.frequency.linearRampToValueAtTime(150, audioCtx.currentTime + 1.5);
-                gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1.5);
-                osc.start(); osc.stop(audioCtx.currentTime + 1.5);
-            }
-            else if (type === 'jumpscare') {
+                osc.frequency.setValueAtTime(80, now);
+                osc.frequency.linearRampToValueAtTime(120, now + 2);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 2);
+                osc.start(); osc.stop(now + 2);
+            } else if (type === 'step') {
+                // Adım sesi (Daha tok)
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(50, now);
+                gainNode.gain.setValueAtTime(0.05, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.start(); osc.stop(now + 0.1);
+            } else if (type === 'scream') {
                 osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(100, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
-                gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
-                osc.start(); osc.stop(audioCtx.currentTime + 1);
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(1000, now + 0.5);
+                gainNode.gain.setValueAtTime(0.5, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 1.0);
+                osc.start(); osc.stop(now + 1.0);
             }
+        }
+
+        // --- DOKU OLUŞTURUCU (Dosya indirmeden texture yapma) ---
+        function createProceduralTexture(color1, color2) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            
+            // Arka plan
+            ctx.fillStyle = color1;
+            ctx.fillRect(0,0,512,512);
+            
+            // Izgara (Grid) deseni
+            ctx.strokeStyle = color2;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            // Dikey çizgiler
+            for(let i=0; i<=512; i+=64) { ctx.moveTo(i,0); ctx.lineTo(i,512); }
+            // Yatay çizgiler
+            for(let i=0; i<=512; i+=64) { ctx.moveTo(0,i); ctx.lineTo(512,i); }
+            ctx.stroke();
+            
+            // Biraz kir ekle (Noise)
+            for(let i=0; i<500; i++) {
+                ctx.fillStyle = Math.random() > 0.5 ? '#000' : '#fff';
+                ctx.globalAlpha = 0.1;
+                ctx.fillRect(Math.random()*512, Math.random()*512, 4, 4);
+            }
+            
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            return tex;
         }
 
         // --- OYUN DEĞİŞKENLERİ ---
@@ -141,63 +169,55 @@
         const velocity = new THREE.Vector3();
         const direction = new THREE.Vector3();
         
-        // Modeller
-        let doorGroup = new THREE.Group(); // Kapıyı menteşeden döndürmek için grup
-        let doorMesh = null;
+        let doorGroup = new THREE.Group();
         let zombieModel = null;
         let keyModel = null;
 
-        // Oyun Mantığı
         let hasKey = true;
-        let doorState = 0; // 0: Kapalı, 1: Animasyon (Anahtar), 2: Açılıyor, 3: Açık
+        let doorState = 0; // 0:Kapalı, 1:Anahtar, 2:Açılıyor, 3:Açık
         let chaseMode = false;
         let isGameOver = false;
         let stamina = 100;
+        let stepTimer = 0; // Adım sesi için
 
-        // Animasyon Değişkenleri
-        let keyAnimStartTime = 0;
-        let doorOpenStartTime = 0;
-        
-        // Kafa Sallama (Head Bob)
-        let headBobTimer = 0;
+        // Animasyon Zamanlayıcıları
+        let keyAnimStart = 0;
 
-        // HTML Elementleri
         const interactionUI = document.getElementById('interaction');
         const blocker = document.getElementById('blocker');
         const instructions = document.getElementById('instructions');
-        const gameOverScreen = document.getElementById('game-over');
-        const staminaBar = document.getElementById('stamina-bar');
         const keyStatus = document.getElementById('key-status');
+        const staminaBar = document.getElementById('stamina-bar');
+        const gameOverDiv = document.getElementById('game-over');
 
         init();
         animate();
 
         function init() {
-            // 1. Sahne
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x000000);
-            scene.fog = new THREE.FogExp2(0x000000, 0.25); // Çok yoğun sis
+            // Ortam biraz daha gri olsun ki duvarlar gözüksün
+            scene.background = new THREE.Color(0x111111);
+            // Sis yoğunluğunu azalttım, etraf daha net
+            scene.fog = new THREE.FogExp2(0x111111, 0.08);
 
-            // 2. Kamera
-            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
-            camera.position.y = 1.7; // Göz hizası
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.y = 1.7;
 
-            // 3. Işıklar (Gelişmiş El Feneri)
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.02); // Neredeyse zifiri karanlık
+            // --- IŞIKLANDIRMA (ARTIK GÖZÜKÜYOR) ---
+            // 1. Ortam Işığı (Genel aydınlık)
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4); 
             scene.add(ambientLight);
 
-            // El Feneri
-            const flashLight = new THREE.SpotLight(0xffffee, 2, 25, Math.PI/7, 0.5, 2);
-            flashLight.position.set(0.2, -0.2, 0); // Sağ elden çıkıyormuş gibi
-            flashLight.castShadow = true; // GÖLGE AÇIK
-            flashLight.shadow.mapSize.width = 1024;
-            flashLight.shadow.mapSize.height = 1024;
+            // 2. El Feneri (Daha geniş ve güçlü)
+            const flashLight = new THREE.SpotLight(0xffffff, 4, 40, Math.PI/4, 0.3, 1);
+            flashLight.position.set(0, 0, 0);
+            flashLight.target.position.set(0, 0, -5);
+            flashLight.castShadow = true;
+            flashLight.shadow.bias = -0.0001;
             camera.add(flashLight);
             camera.add(flashLight.target);
-            flashLight.target.position.set(0, 0, -3);
             scene.add(camera);
 
-            // 4. Kontroller
             controls = new PointerLockControls(camera, document.body);
 
             instructions.addEventListener('click', () => controls.lock());
@@ -213,124 +233,119 @@
                 }
             });
 
-            // 5. Ortam (Koridor)
+            // --- ORTAM OLUŞTURMA (DUVARLAR & ZEMİN) ---
+            const wallTexture = createProceduralTexture('#333333', '#111111'); // Gri Duvar
+            const floorTexture = createProceduralTexture('#222222', '#444444'); // Koyu Zemin
+            
+            wallTexture.repeat.set(5, 1);
+            floorTexture.repeat.set(2, 10);
+
             // Zemin
-            const textureLoader = new THREE.TextureLoader();
-            // Placeholder texture (Normalde dosya yüklenir ama renk ile idare edelim)
-            const floorGeo = new THREE.PlaneGeometry(10, 50);
-            const floorMat = new THREE.MeshStandardMaterial({ 
-                color: 0x1a1a1a, roughness: 0.9, metalness: 0.1 
-            });
+            const floorGeo = new THREE.PlaneGeometry(10, 60);
+            const floorMat = new THREE.MeshStandardMaterial({ map: floorTexture, roughness: 0.8 });
             const floor = new THREE.Mesh(floorGeo, floorMat);
             floor.rotation.x = -Math.PI / 2;
-            floor.receiveShadow = true; // Zemin gölge alır
+            floor.receiveShadow = true;
             scene.add(floor);
 
-            // Duvarlar (Basit Geometri)
-            const wallMat = new THREE.MeshStandardMaterial({ color: 0x0f0f0f, roughness: 1 });
-            const wall1 = new THREE.Mesh(new THREE.BoxGeometry(1, 5, 50), wallMat);
-            wall1.position.set(5.5, 2.5, 0);
-            wall1.receiveShadow = true;
-            scene.add(wall1);
+            // Duvarlar
+            const wallGeo = new THREE.BoxGeometry(1, 6, 60);
+            const wallMat = new THREE.MeshStandardMaterial({ map: wallTexture, roughness: 0.9 });
             
-            const wall2 = new THREE.Mesh(new THREE.BoxGeometry(1, 5, 50), wallMat);
-            wall2.position.set(-5.5, 2.5, 0);
-            wall2.receiveShadow = true;
-            scene.add(wall2);
+            const wallL = new THREE.Mesh(wallGeo, wallMat);
+            wallL.position.set(-5.5, 3, 0);
+            wallL.receiveShadow = true;
+            wallL.castShadow = true;
+            scene.add(wallL);
+
+            const wallR = new THREE.Mesh(wallGeo, wallMat);
+            wallR.position.set(5.5, 3, 0);
+            wallR.receiveShadow = true;
+            wallR.castShadow = true;
+            scene.add(wallR);
 
             // Tavan
-            const ceil = new THREE.Mesh(new THREE.PlaneGeometry(10, 50), wallMat);
+            const ceil = new THREE.Mesh(new THREE.PlaneGeometry(10, 60), new THREE.MeshBasicMaterial({color:0x050505}));
             ceil.rotation.x = Math.PI / 2;
-            ceil.position.y = 5;
+            ceil.position.y = 6;
             scene.add(ceil);
 
-            // 6. GLB Model Yükleyici
+            // --- MODEL YÜKLEME ---
             const loader = new GLTFLoader();
 
-            // KAPI
+            // Kapı
             loader.load('./Door.glb', (gltf) => {
-                doorMesh = gltf.scene;
-                doorMesh.traverse(c => { if(c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
-                
-                // Kapıyı pivot noktasına (Menteşe) göre ayarlamak için grup içine alıyoruz
-                // Genelde kapı modellerinin merkezi ortadadır. Menteşeyi sola almak için kapıyı sağa kaydırıp grubu sola kaydırırız.
-                doorMesh.position.set(0.5, 0, 0); // Kapıyı grubun içinde hafif sağa al (tahmini menteşe ayarı)
-                
-                doorGroup.add(doorMesh);
-                doorGroup.position.set(-0.5, 0, -10); // Grubu koridorun sonuna koy
+                const model = gltf.scene;
+                model.traverse(o => { if(o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+                // Kapı modelinin merkezine göre ayarlama
+                model.position.set(0.6, 0, 0); // Kapı menteşesi ayarı
+                doorGroup.add(model);
+                doorGroup.position.set(-0.6, 0, -15); // Kapı koridorun sonunda
                 scene.add(doorGroup);
-
             }, undefined, (e) => {
-                // Fallback (Model yoksa kutu koy)
-                const geo = new THREE.BoxGeometry(2, 3.5, 0.2);
-                const mat = new THREE.MeshStandardMaterial({color: 0x332211});
-                doorMesh = new THREE.Mesh(geo, mat);
-                doorMesh.position.set(1, 1.75, 0); 
-                doorGroup.add(doorMesh);
-                doorGroup.position.set(-1, 0, -10);
+                // Yedek Kapı
+                const g = new THREE.BoxGeometry(2.5, 4, 0.2);
+                const m = new THREE.MeshStandardMaterial({color:0x654321});
+                const d = new THREE.Mesh(g,m);
+                d.position.set(1.25, 2, 0);
+                doorGroup.add(d);
+                doorGroup.position.set(-1.25, 0, -15);
                 scene.add(doorGroup);
             });
 
-            // ZOMBİ
+            // Zombi
             loader.load('./Zombie.glb', (gltf) => {
                 zombieModel = gltf.scene;
-                zombieModel.traverse(c => { if(c.isMesh) { c.castShadow = true; } });
-                
-                // Zombiyi kapının tam arkasına koy, havada durmasın diye Y=0
-                zombieModel.position.set(0, 0, -12); 
-                zombieModel.rotation.y = Math.PI; // Bize baksın
+                zombieModel.traverse(o => { if(o.isMesh) o.castShadow = true; });
+                zombieModel.position.set(0, 0, -18); // Kapının arkasında
+                zombieModel.rotation.y = Math.PI;
                 scene.add(zombieModel);
             }, undefined, () => {
-                // Fallback Zombi
-                const geo = new THREE.CapsuleGeometry(0.5, 1.8, 4, 8);
-                const mat = new THREE.MeshStandardMaterial({color: 0x225522});
-                zombieModel = new THREE.Mesh(geo, mat);
-                zombieModel.position.set(0, 1, -12);
+                // Yedek Zombi
+                const g = new THREE.CapsuleGeometry(0.6, 1.8);
+                const m = new THREE.MeshStandardMaterial({color:0x00ff00});
+                zombieModel = new THREE.Mesh(g,m);
+                zombieModel.position.set(0, 0.9, -18);
                 scene.add(zombieModel);
             });
 
-            // ANAHTAR (FPS Görünümü)
+            // Anahtar (Elde)
             loader.load('./Skeleton Key.glb', (gltf) => {
                 keyModel = gltf.scene;
-                keyModel.scale.set(0.5, 0.5, 0.5); // Boyut ayarı
-                // Başlangıç konumu (Ekranın sağ altı)
-                keyModel.position.set(0.4, -0.4, -0.6); 
+                keyModel.scale.set(0.5, 0.5, 0.5);
+                keyModel.position.set(0.5, -0.5, -0.8);
                 keyModel.rotation.set(0, 1.5, 0);
-                camera.add(keyModel); // Kameraya ekle
-            }, undefined, () => console.log("Anahtar yok"));
+                camera.add(keyModel);
+            });
 
-            // 7. Renderer
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true; // Gölge motoru aktif
+            renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             document.body.appendChild(renderer.domElement);
 
-            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
             document.addEventListener('keydown', onKeyDown);
             document.addEventListener('keyup', onKeyUp);
         }
 
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        function onKeyDown(event) {
-            switch (event.code) {
+        function onKeyDown(e) {
+            switch(e.code) {
                 case 'KeyW': moveForward = true; break;
                 case 'KeyA': moveLeft = true; break;
                 case 'KeyS': moveBackward = true; break;
                 case 'KeyD': moveRight = true; break;
                 case 'ShiftLeft': isSprinting = true; break;
-                case 'KeyE': triggerDoorSequence(); break;
+                case 'KeyE': interact(); break;
             }
         }
-
-        function onKeyUp(event) {
-            switch (event.code) {
+        function onKeyUp(e) {
+            switch(e.code) {
                 case 'KeyW': moveForward = false; break;
                 case 'KeyA': moveLeft = false; break;
                 case 'KeyS': moveBackward = false; break;
@@ -339,146 +354,126 @@
             }
         }
 
-        // --- GELİŞMİŞ ETKİLEŞİM MEKANİĞİ ---
-        function triggerDoorSequence() {
-            // Eğer kapı zaten açılıyorsa veya anahtar yoksa işlem yapma
-            if (doorState !== 0 || !hasKey) return;
-            
-            // Mesafeyi kontrol et
+        function interact() {
+            if(!hasKey || doorState !== 0) return;
             const dist = camera.position.distanceTo(doorGroup.position);
-            if (dist > 4) return;
-
-            // 1. Durum: Anahtar Animasyonu Başlıyor
-            doorState = 1; // Animasyon modu
-            keyAnimStartTime = performance.now();
-            interactionUI.style.display = 'none'; // Yazıyı gizle
-            playSound('unlock'); // Kilit sesi çal
+            if(dist < 5) {
+                doorState = 1; // Animasyon başlasın
+                keyAnimStart = performance.now();
+                playSound('unlock');
+            }
         }
 
         function animate() {
             requestAnimationFrame(animate);
-
-            if (isGameOver) return;
+            if(isGameOver) return;
 
             const time = performance.now();
             const delta = (time - prevTime) / 1000;
-            
-            // --- OYUN MANTIĞI ---
+            prevTime = time;
 
-            // 1. Kapı Açma Animasyon Zinciri
-            if (doorState === 1 && keyModel) {
-                // Anahtarı ortaya taşı ve döndür
-                const elapsed = (time - keyAnimStartTime) / 1000;
-                
-                // Lerp (Yumuşak geçiş) ile anahtarı ortaya çek
-                keyModel.position.lerp(new THREE.Vector3(0, -0.1, -0.5), 0.1);
-                keyModel.rotation.z += 5 * delta; // Anahtarı döndür (Kilit açma efekti)
+            // --- KAPI MEKANİĞİ ---
+            if(doorState === 1 && keyModel) {
+                // Anahtar animasyonu
+                const elapsed = (time - keyAnimStart) / 1000;
+                // Anahtarı ortaya kaydır
+                keyModel.position.lerp(new THREE.Vector3(0, -0.1, -0.4), 0.1);
+                keyModel.rotation.z += 6 * delta;
 
-                // 1 saniye sonra kapıyı açmaya başla
-                if (elapsed > 1.0) {
-                    doorState = 2; // Kapı açılma modu
-                    doorOpenStartTime = time;
-                    keyModel.visible = false; // Anahtarı yok et
+                if(elapsed > 1.2) {
+                    doorState = 2;
+                    keyModel.visible = false;
                     hasKey = false;
                     keyStatus.innerText = "YOK";
                     keyStatus.style.color = "red";
-                    playSound('creak'); // Kapı gıcırtısı
+                    playSound('creak');
                     
-                    // ZOMBİYİ TETİKLE!
+                    // Zombi gecikmeli gelsin
                     setTimeout(() => {
                         chaseMode = true;
-                        playSound('jumpscare');
+                        playSound('scream');
+                        scene.fog.color.setHex(0x330000); // Sis kızarır
                     }, 500);
                 }
             }
 
-            // 2. Kapı Fiziksel Hareketi
-            if (doorState === 2 || doorState === 3) {
-                // Kapı grubunu Y ekseninde 90 derece döndür (Radyan: PI/2)
-                // Smooth açılış için
-                if (doorGroup.rotation.y > -Math.PI / 2) {
-                    doorGroup.rotation.y -= 2 * delta; // Açılma hızı
+            if(doorState === 2) {
+                // Kapı açılma
+                if(doorGroup.rotation.y > -Math.PI/2) {
+                    doorGroup.rotation.y -= 1.5 * delta;
                 } else {
-                    doorState = 3; // Tamamen açık
+                    doorState = 3;
                 }
             }
 
-            // 3. Zombi Yapay Zekası
-            if (chaseMode && zombieModel) {
-                // Zombi bize baksın
+            // --- ZOMBİ KOVALAMACA ---
+            if(chaseMode && zombieModel) {
                 zombieModel.lookAt(camera.position.x, 0, camera.position.z);
+                const speed = 7.2;
+                const dir = new THREE.Vector3().subVectors(camera.position, zombieModel.position).normalize();
                 
-                // Bize doğru koşsun
-                const speed = 7.5; // Zombi hızı
-                const zDir = new THREE.Vector3();
-                zDir.subVectors(camera.position, zombieModel.position).normalize();
-                
-                // Sadece Y ekseni 0 kalsın (Zombi uçmasın)
-                zombieModel.position.x += zDir.x * speed * delta;
-                zombieModel.position.z += zDir.z * speed * delta;
-                // zombieModel.position.y = 0; // Zaten başlangıçta ayarladık, gerekirse burayı aç.
+                zombieModel.position.x += dir.x * speed * delta;
+                zombieModel.position.z += dir.z * speed * delta;
+                // Y eksenini ellemiyoruz, zemin düz
 
-                // Yakalanma
-                if (camera.position.distanceTo(zombieModel.position) < 1.2) {
+                if(camera.position.distanceTo(zombieModel.position) < 1.0) {
                     isGameOver = true;
                     controls.unlock();
-                    gameOverScreen.style.display = 'flex';
+                    gameOverDiv.style.display = 'flex';
                 }
             }
 
-            // --- OYUNCU HAREKETLERİ ---
-            if (controls.isLocked) {
-                // Koşma Mantığı
-                let activeSpeed = 40.0;
-                if (isSprinting && stamina > 0) {
-                    activeSpeed = 80.0; // Koşma hızı
-                    stamina -= 50 * delta;
+            // --- OYUNCU HAREKET ---
+            if(controls.isLocked) {
+                const speed = (isSprinting && stamina > 0) ? 10.0 : 4.0;
+                
+                // Stamina mantığı
+                if(isSprinting && (moveForward || moveBackward || moveRight || moveLeft)) {
+                    stamina -= 30 * delta;
+                    if(stamina < 0) stamina = 0;
                 } else {
-                    if (stamina < 100) stamina += 20 * delta;
+                    stamina += 15 * delta;
+                    if(stamina > 100) stamina = 100;
                 }
                 staminaBar.style.width = stamina + '%';
-                if(stamina < 20) staminaBar.style.backgroundColor = 'red';
-                else staminaBar.style.backgroundColor = 'white';
+                staminaBar.style.backgroundColor = stamina < 20 ? '#ff0000' : '#ffffff';
 
-                // Fizik
                 velocity.x -= velocity.x * 10.0 * delta;
                 velocity.z -= velocity.z * 10.0 * delta;
-
                 direction.z = Number(moveForward) - Number(moveBackward);
                 direction.x = Number(moveRight) - Number(moveLeft);
                 direction.normalize();
 
-                if (moveForward || moveBackward) velocity.z -= direction.z * activeSpeed * delta;
-                if (moveLeft || moveRight) velocity.x -= direction.x * activeSpeed * delta;
+                if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * speed * delta; // Hız faktörü arttı
+                if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * speed * delta;
 
-                controls.moveRight(-velocity.x * delta);
-                controls.moveForward(-velocity.z * delta);
+                controls.moveRight(-velocity.x * delta * 0.02);
+                controls.moveForward(-velocity.z * delta * 0.02);
 
-                // Head Bob (Kafa Sallanması)
-                if (moveForward || moveBackward || moveLeft || moveRight) {
-                    const bobSpeed = isSprinting ? 20 : 12;
-                    const bobAmount = isSprinting ? 0.1 : 0.05;
-                    headBobTimer += delta * bobSpeed;
-                    camera.position.y = 1.7 + Math.sin(headBobTimer) * bobAmount;
+                // Adım sesi (Basit zamanlayıcı)
+                if(moveForward || moveBackward || moveLeft || moveRight) {
+                    stepTimer += delta * (isSprinting ? 15 : 10);
+                    if(stepTimer > 5) {
+                        playSound('step');
+                        stepTimer = 0;
+                        // Head bob
+                        camera.position.y = 1.7 + Math.sin(time * 0.015) * 0.05;
+                    }
                 } else {
-                    // Durunca kafayı yavaşça merkeze getir
                     camera.position.y = THREE.MathUtils.lerp(camera.position.y, 1.7, 0.1);
+                }
+
+                // Raycaster (Etkileşim kontrolü)
+                const ray = new THREE.Raycaster();
+                ray.setFromCamera(new THREE.Vector2(), camera);
+                const hits = ray.intersectObjects([doorGroup], true);
+                if(hits.length > 0 && hits[0].distance < 5 && doorState === 0 && hasKey) {
+                    interactionUI.style.display = 'block';
+                } else {
+                    interactionUI.style.display = 'none';
                 }
             }
 
-            // Raycaster (Bakış kontrolü)
-            // Kapıya bakıyor muyuz?
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
-            const intersects = raycaster.intersectObjects([doorGroup], true); // true = alt objeleri de tara
-            
-            if (intersects.length > 0 && intersects[0].distance < 4 && doorState === 0 && hasKey) {
-                interactionUI.style.display = 'block';
-            } else {
-                interactionUI.style.display = 'none';
-            }
-
-            prevTime = time;
             renderer.render(scene, camera);
         }
     </script>
