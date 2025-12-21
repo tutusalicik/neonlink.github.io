@@ -2,105 +2,43 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PROJECT: BLACKOUT</title>
+    <title>ULTIMATE WEB BOXING UE5-STYLE</title>
     <style>
+        /* --- CINEMATIC UI --- */
         @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap');
 
         body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Oswald', sans-serif; user-select: none; }
-
-        /* --- BODYCAM EFEKTLERİ (DAHA NET) --- */
-        #ui-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 10;
-        }
-
-        /* Köşe Karartması (Vignette) - Daha yumuşak */
-        #vignette {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.9) 100%);
-        }
-
-        /* Kamera Yazıları */
-        #cam-info {
-            position: absolute; top: 30px; right: 30px; text-align: right;
-            color: #fff; font-size: 20px; text-shadow: 0 0 5px rgba(255,255,255,0.5);
-            font-family: monospace;
-        }
-        #rec-dot {
-            color: red; animation: blink 1s infinite;
-        }
-
-        #crosshair {
-            position: absolute; top: 50%; left: 50%; width: 4px; height: 4px;
-            background: rgba(255,255,255,0.8); border-radius: 50%;
-            transform: translate(-50%, -50%); box-shadow: 0 0 4px white;
-        }
-
-        /* KAN EFEKTİ (HASAR ALINCA) */
-        #blood-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, transparent 40%, rgba(180,0,0,0.8) 90%);
-            display: none; z-index: 15; mix-blend-mode: multiply;
-        }
-
-        /* --- MENÜLER --- */
-        #menu-screen, #death-screen {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #050505; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 100;
-            color: white;
-        }
-
-        h1 { font-size: 5rem; margin: 0; letter-spacing: 10px; text-transform: uppercase; background: -webkit-linear-gradient(#fff, #666); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
-        input {
-            background: #111; border: 1px solid #444; color: white;
-            padding: 15px; font-size: 1.2rem; margin: 20px;
-            text-align: center; width: 250px; outline: none;
-            font-family: 'Oswald', sans-serif; transition: 0.3s;
-        }
-        input:focus { border-color: #fff; box-shadow: 0 0 15px rgba(255,255,255,0.2); }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-sizing: border-box; }
+        
+        /* Health Bars */
+        .hud-top { display: flex; justify-content: space-between; width: 100%; padding: 20px 50px; }
+        .bar-container { width: 40%; }
+        .bar-label { color: #fff; font-size: 24px; text-transform: uppercase; text-shadow: 0 0 10px rgba(0,0,0,0.8); margin-bottom: 5px; display: block;}
+        .health-track { width: 100%; height: 20px; background: rgba(50,50,50,0.8); border: 2px solid rgba(255,255,255,0.3); transform: skewX(-20deg); overflow: hidden; }
+        .health-fill { height: 100%; transition: width 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        #player-hp { background: linear-gradient(90deg, #00d2ff, #3a7bd5); width: 100%; box-shadow: 0 0 15px #00d2ff; }
+        #enemy-hp { background: linear-gradient(90deg, #ff416c, #ff4b2b); width: 100%; box-shadow: 0 0 15px #ff416c; }
 
-        button {
-            background: #fff; color: #000; border: none; padding: 15px 50px;
-            font-size: 1.5rem; font-weight: bold; cursor: pointer;
-            text-transform: uppercase; font-family: 'Oswald', sans-serif;
-            transition: 0.2s;
-        }
-        button:hover { background: #ccc; transform: scale(1.05); }
+        /* Crosshair */
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; border: 2px solid rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); transition: all 0.1s; }
+        .crosshair-active { border-color: #ff0000 !important; width: 20px !important; height: 20px !important; background: rgba(255,0,0,0.2); }
 
-        @keyframes blink { 50% { opacity: 0; } }
-        .hidden { display: none !important; }
+        /* Hit Effects & Overlays */
+        #damage-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, transparent 50%, rgba(255,0,0,0.6) 100%); opacity: 0; transition: opacity 0.5s; pointer-events: none; }
+        #flash-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; pointer-events: none; mix-blend-mode: overlay; }
 
+        /* Start Screen */
+        #start-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; pointer-events: auto; backdrop-filter: blur(5px); }
+        h1 { font-size: 80px; color: transparent; -webkit-text-stroke: 2px #fff; margin: 0; letter-spacing: 10px; text-transform: uppercase; }
+        h2 { font-size: 30px; color: #ff4b2b; letter-spacing: 5px; margin-top: -10px; text-transform: uppercase; }
+        .btn { margin-top: 50px; padding: 15px 50px; font-size: 24px; background: #fff; border: none; font-family: 'Oswald', sans-serif; cursor: pointer; transform: skewX(-20deg); transition: 0.3s; font-weight: bold; }
+        .btn:hover { background: #ff4b2b; color: white; box-shadow: 0 0 20px #ff4b2b; transform: skewX(-20deg) scale(1.1); }
+        
+        #loading-text { color: #888; margin-top: 20px; font-size: 14px; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
-</head>
-<body>
-
-    <div id="ui-layer">
-        <div id="vignette"></div>
-        <div id="cam-info">
-            <span id="rec-dot">● REC</span><br>
-            <span id="time-display">00:00:00</span><br>
-            ISO 800 | F2.8
-        </div>
-        <div id="crosshair"></div>
-        <div id="blood-overlay"></div>
-    </div>
-
-    <div id="menu-screen">
-        <h1>BLACKOUT</h1>
-        <p style="color:#888;">HEDEF: GİZLİ KAPIYI BUL VE KAÇ.</p>
-        <input type="text" id="invite-code" placeholder="GİRİŞ KODU">
-        <button onclick="startGame()">BAŞLAT</button>
-        <p id="error-msg" style="color:red; display:none; margin-top:10px;">GEÇERSİZ KOD</p>
-    </div>
-
-    <div id="death-screen" class="hidden">
-        <h1 style="color:red; -webkit-text-fill-color: red;">ÖLDÜN</h1>
-        <p>ZOMBİ SENİ YAKALADI.</p>
-        <button onclick="location.reload()">TEKRAR DENE</button>
-    </div>
 
     <script type="importmap">
         {
@@ -110,361 +48,464 @@
             }
         }
     </script>
+</head>
+<body>
+
+    <div id="damage-overlay"></div>
+    <div id="flash-overlay"></div>
+
+    <div id="ui-layer">
+        <div class="hud-top">
+            <div class="bar-container">
+                <span class="bar-label">PLAYER</span>
+                <div class="health-track"><div id="player-hp" class="health-fill"></div></div>
+            </div>
+            <div class="bar-container" style="text-align: right;">
+                <span class="bar-label">OPPONENT</span>
+                <div class="health-track" style="justify-content: flex-end; display: flex;"><div id="enemy-hp" class="health-fill"></div></div>
+            </div>
+        </div>
+        <div id="crosshair"></div>
+    </div>
+
+    <div id="start-screen">
+        <h1>IRON FIST</h1>
+        <h2>Heavyweight Championship</h2>
+        <div id="loading-text">ASSETS LOADING...</div>
+        <button class="btn" id="start-btn" style="display:none;">ENTER THE RING</button>
+    </div>
 
     <script type="module">
         import * as THREE from 'three';
-        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
-        // --- AYARLAR ---
-        const CODE = "1234"; // Basit test kodu
-        let isGameRunning = false;
-        
-        // --- SES SİSTEMİ (Kalp Atışı) ---
-        // Rahatsız edici cızırtılar yerine sadece kalp sesi
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        let lastHeartbeat = 0;
-        
-        function playHeartbeat(distance) {
-            // Mesafe ne kadar azsa (yakınsa), kalp o kadar hızlı atar
-            // Mesafe 15m'den fazlaysa ses yok.
-            if (distance > 15) return;
+        // --- GLOBAL CONFIGURATION (Müşteri Ayarları) ---
+        const CONFIG = {
+            playerSpeed: 4.0,
+            mouseSensitivity: 0.002,
+            enemyScale: 1.0,  // Rakip boyutu
+            gloveScale: 0.1,  // Eldiven boyutu (Glb'ye göre değiştir)
+            punchDamage: 10,
+            enemyDamage: 15,
+            debugMode: false
+        };
 
-            // Atış hızı: Yakınsa 0.3sn, uzaksa 1.5sn
-            const rate = Math.max(0.3, distance / 10); 
-            
-            if (audioCtx.currentTime - lastHeartbeat > rate) {
-                lastHeartbeat = audioCtx.currentTime;
+        // --- ENGINE CORE ---
+        class GameEngine {
+            constructor() {
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(0x050505);
+                this.scene.fog = new THREE.FogExp2(0x050505, 0.015); // Volumetric Fog hissi
+
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+                this.camera.position.set(0, 1.75, 0); // Göz hizası
+
+                this.renderer = new THREE.WebGLRenderer({ antialias: false }); // Post-process için false
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(window.devicePixelRatio);
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                this.renderer.toneMappingExposure = 0.8;
+                document.body.appendChild(this.renderer.domElement);
+
+                // Post-Processing (UE5 Bloom Effect)
+                this.composer = new EffectComposer(this.renderer);
+                const renderPass = new RenderPass(this.scene, this.camera);
+                this.composer.addPass(renderPass);
+
+                const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+                bloomPass.threshold = 0.2;
+                bloomPass.strength = 0.4; // Işık patlama şiddeti
+                bloomPass.radius = 0.5;
+                this.composer.addPass(bloomPass);
                 
-                // Tok bir "Güm" sesi (Low Frequency)
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
+                const outputPass = new OutputPass();
+                this.composer.addPass(outputPass);
+
+                this.clock = new THREE.Clock();
+                this.controls = new PointerLockControls(this.camera, document.body);
                 
-                osc.frequency.setValueAtTime(60, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+                this.assets = {};
+                this.mixers = [];
+                this.particles = [];
                 
-                gain.gain.setValueAtTime(0.5, audioCtx.currentTime); // Ses seviyesi
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                this.setupLights();
+                this.setupInputs();
+                this.loadAssets();
                 
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.2);
-            }
-        }
-
-        // --- THREE.JS KURULUMU ---
-        const scene = new THREE.Scene();
-        // Siyah sis (Karanlık ortam için) - Görüş mesafesini temizledik
-        scene.fog = new THREE.Fog(0x000000, 1, 25); 
-
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 100);
-        camera.position.y = 1.7;
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio); // Daha keskin görüntü
-        // Tone Mapping (Daha gerçekçi ışık)
-        renderer.toneMapping = THREE.ReinhardToneMapping;
-        renderer.toneMappingExposure = 1.5;
-        document.body.appendChild(renderer.domElement);
-
-        // --- IŞIKLANDIRMA (EL FENERİ) ---
-        // Ambient Light (Ortam ışığı) çok az, zifiri karanlık olmasın
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.05); 
-        scene.add(ambientLight);
-
-        // El Feneri (SpotLight) - Çok daha parlak ve geniş
-        const flashLight = new THREE.SpotLight(0xffffff, 80, 40, 0.5, 0.5, 2);
-        flashLight.position.set(0, 0, 0);
-        flashLight.castShadow = true;
-        camera.add(flashLight);
-        
-        // Fenerin hedefini kameranın baktığı yere sabitle
-        const lightTarget = new THREE.Object3D();
-        lightTarget.position.set(0, 0, -1);
-        camera.add(lightTarget);
-        flashLight.target = lightTarget;
-        
-        scene.add(camera);
-
-        // --- DOKU OLUŞTURUCU (Texture Generator) ---
-        // Bok gibi renkler yerine prosedürel beton/fayans dokusu
-        function createProTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 512; canvas.height = 512;
-            const ctx = canvas.getContext('2d');
-            
-            // Gri zemin
-            ctx.fillStyle = '#222'; 
-            ctx.fillRect(0,0,512,512);
-            
-            // Kirli detaylar (Noise)
-            for(let i=0; i<5000; i++) {
-                ctx.fillStyle = Math.random() > 0.5 ? '#333' : '#111';
-                ctx.fillRect(Math.random()*512, Math.random()*512, 2, 2);
+                // Game States
+                this.player = { hp: 100, isPunching: false, canPunch: true };
+                this.enemy = { hp: 100, state: 'IDLE', action: null, model: null, mixer: null, animations: {} };
+                
+                window.addEventListener('resize', () => this.onResize());
             }
 
-            // Çizgiler (Fayans etkisi)
-            ctx.strokeStyle = '#111';
-            ctx.lineWidth = 4;
-            ctx.beginPath();
-            // Dikey
-            for(let i=0; i<=512; i+=128) { ctx.moveTo(i,0); ctx.lineTo(i,512); }
-            // Yatay
-            for(let i=0; i<=512; i+=128) { ctx.moveTo(0,i); ctx.lineTo(512,i); }
-            ctx.stroke();
+            setupLights() {
+                // Ambient
+                const ambient = new THREE.HemisphereLight(0x444444, 0x000000, 0.4);
+                this.scene.add(ambient);
 
-            const tex = new THREE.CanvasTexture(canvas);
-            tex.wrapS = THREE.RepeatWrapping;
-            tex.wrapT = THREE.RepeatWrapping;
-            return tex;
-        }
+                // Main Spotlight (Ring Işığı)
+                const spot = new THREE.SpotLight(0xffffff, 150);
+                spot.position.set(0, 8, 0);
+                spot.angle = Math.PI / 6;
+                spot.penumbra = 0.5;
+                spot.decay = 1.5;
+                spot.distance = 50;
+                spot.castShadow = true;
+                spot.shadow.mapSize.width = 2048;
+                spot.shadow.mapSize.height = 2048;
+                spot.shadow.bias = -0.0001;
+                this.scene.add(spot);
 
-        const wallTexture = createProTexture();
-        const wallMat = new THREE.MeshStandardMaterial({ 
-            map: wallTexture, 
-            roughness: 0.8,
-            color: 0x888888 // Renk tonunu nötr gri yaptık
-        });
-        const floorMat = new THREE.MeshStandardMaterial({ 
-            map: wallTexture, 
-            roughness: 0.9,
-            color: 0x444444
-        });
+                // Rim Light (Karakterin arkasından vuran mavi ışık - Sinematik efekt)
+                const rimLight = new THREE.DirectionalLight(0x3366ff, 2);
+                rimLight.position.set(0, 2, -5);
+                this.scene.add(rimLight);
+            }
 
-        // --- HARİTA (LABİRENT) ---
-        const walls = [];
-        // 1: Duvar, 0: Yol, 9: Zombi, 8: Kapı
-        const map = [
-            [1,1,1,1,1,1,1,1,1,1],
-            [1,0,0,0,1,0,0,0,9,1],
-            [1,0,1,0,1,0,1,1,1,1],
-            [1,0,1,0,0,0,0,0,0,1],
-            [1,0,1,1,1,1,1,1,0,1],
-            [1,0,0,0,0,0,0,0,0,1],
-            [1,1,1,1,1,0,1,1,1,1],
-            [1,8,0,0,0,0,0,0,0,1],
-            [1,1,1,1,1,1,1,1,1,1]
-        ];
-        
-        const UNIT = 4; // Duvar genişliği
+            loadAssets() {
+                const loader = new GLTFLoader();
+                const manager = new THREE.LoadingManager();
 
-        // Zemin
-        const floorGeo = new THREE.PlaneGeometry(100, 100);
-        const floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.rotation.x = -Math.PI/2;
-        scene.add(floor);
+                manager.onLoad = () => {
+                    document.getElementById('loading-text').style.display = 'none';
+                    const btn = document.getElementById('start-btn');
+                    btn.style.display = 'block';
+                    btn.addEventListener('click', () => {
+                        document.getElementById('start-screen').style.display = 'none';
+                        this.controls.lock();
+                        this.animate();
+                    });
+                };
 
-        // Tavan
-        const ceiling = new THREE.Mesh(floorGeo, floorMat);
-        ceiling.rotation.x = Math.PI/2;
-        ceiling.position.y = 4; // Yüksek tavan
-        scene.add(ceiling);
+                // 1. RING
+                loader.load('./Boxing Ring.glb', (gltf) => {
+                    const model = gltf.scene;
+                    model.traverse(o => { if(o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+                    this.scene.add(model);
+                }, undefined, null, manager);
 
-        let zombieRef = null;
-        let doorRef = null;
+                // 2. ENEMY (MALE FIGHTER)
+                loader.load('./Male Fighter.glb', (gltf) => {
+                    const model = gltf.scene;
+                    model.position.set(0, 0, -2.5);
+                    model.scale.set(CONFIG.enemyScale, CONFIG.enemyScale, CONFIG.enemyScale);
+                    model.traverse(o => { if(o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+                    this.scene.add(model);
+                    this.enemy.model = model;
 
-        map.forEach((row, z) => {
-            row.forEach((val, x) => {
-                const px = (x - 5) * UNIT;
-                const pz = (z - 5) * UNIT;
+                    // Animation System
+                    const mixer = new THREE.AnimationMixer(model);
+                    this.mixers.push(mixer);
+                    this.enemy.mixer = mixer;
+                    
+                    // Animasyonları işle (İsim eşleştirmesi gerekebilir)
+                    gltf.animations.forEach((clip) => {
+                        // Basit isim eşleştirmesi (Dosyada isimler farklı olabilir!)
+                        const name = clip.name.toLowerCase();
+                        let action = mixer.clipAction(clip);
+                        
+                        if(name.includes('idle')) this.enemy.animations['idle'] = action;
+                        else if(name.includes('punch') || name.includes('attack')) this.enemy.animations['attack'] = action;
+                        else if(name.includes('hit') || name.includes('reaction')) this.enemy.animations['hit'] = action;
+                        else this.enemy.animations[name] = action; // Diğerlerini olduğu gibi kaydet
+                    });
 
-                if(val === 1) {
-                    const geo = new THREE.BoxGeometry(UNIT, 4, UNIT);
-                    const mesh = new THREE.Mesh(geo, wallMat);
-                    mesh.position.set(px, 2, pz);
-                    scene.add(mesh);
-                    walls.push(new THREE.Box3().setFromObject(mesh)); // Çarpışma için
-                } 
-                else if (val === 9) {
-                    // ZOMBIE YERİNE KIRMIZI GÖZLÜ SİYAH BİR ŞEKİL (MODEL YOKSA)
-                    loadZombie(px, pz);
+                    // Başlangıç animasyonu
+                    if(this.enemy.animations['idle']) this.enemy.animations['idle'].play();
+                    else if(gltf.animations.length > 0) mixer.clipAction(gltf.animations[0]).play(); // Fallback
+
+                }, undefined, null, manager);
+
+                // 3. PLAYER (GLOVES)
+                loader.load('./Boxing Gloves.glb', (gltf) => {
+                    this.gloves = gltf.scene;
+                    this.gloves.scale.set(CONFIG.gloveScale, CONFIG.gloveScale, CONFIG.gloveScale);
+                    this.gloves.position.set(0.3, -0.4, -0.5); // FPS Pozisyonu
+                    this.gloves.rotation.set(0, Math.PI, 0); // Bize dönük
+                    this.camera.add(this.gloves);
+                    this.scene.add(this.camera);
+                }, undefined, null, manager);
+            }
+
+            setupInputs() {
+                this.keys = { w: false, a: false, s: false, d: false };
+                document.addEventListener('keydown', (e) => this.keys[e.key.toLowerCase()] = true);
+                document.addEventListener('keyup', (e) => this.keys[e.key.toLowerCase()] = false);
+                
+                document.addEventListener('mousedown', () => {
+                    if(this.controls.isLocked) this.playerPunch();
+                });
+            }
+
+            // --- GAMEPLAY MECHANICS ---
+
+            playerPunch() {
+                if(!this.player.canPunch || !this.gloves) return;
+                
+                this.player.isPunching = true;
+                this.player.canPunch = false;
+
+                // 1. Procedural Animation (Eldiveni İleri İt)
+                const startZ = -0.5;
+                const targetZ = -1.2;
+                let progress = 0;
+                
+                // Sağ el veya sol el rastgele
+                const isRight = Math.random() > 0.5;
+                const armOffset = isRight ? 0.3 : -0.3;
+                this.gloves.position.x = armOffset; // O anki ele geç
+
+                const punchInterval = setInterval(() => {
+                    progress += 0.15;
+                    if(progress < 1) {
+                        // İleri
+                        this.gloves.position.z = THREE.MathUtils.lerp(startZ, targetZ, progress);
+                    } else if (progress < 2) {
+                        // Geri
+                        this.gloves.position.z = THREE.MathUtils.lerp(targetZ, startZ, progress - 1);
+                    } else {
+                        clearInterval(punchInterval);
+                        this.gloves.position.z = startZ;
+                        this.player.isPunching = false;
+                        setTimeout(() => this.player.canPunch = true, 300); // Cooldown
+                    }
+                }, 16);
+
+                // 2. Hit Detection
+                this.checkHit();
+            }
+
+            checkHit() {
+                if(!this.enemy.model) return;
+
+                // Raycaster yerine basit açı ve mesafe kontrolü (Daha performanslı)
+                const playerPos = new THREE.Vector3();
+                const enemyPos = new THREE.Vector3();
+                this.camera.getWorldPosition(playerPos);
+                this.enemy.model.getWorldPosition(enemyPos);
+                
+                const distance = playerPos.distanceTo(enemyPos);
+                
+                // Kameranın baktığı yön vektörü
+                const direction = new THREE.Vector3();
+                this.camera.getWorldDirection(direction);
+                
+                // Rakibe doğru mu bakıyoruz?
+                const toEnemy = enemyPos.clone().sub(playerPos).normalize();
+                const angle = direction.angleTo(toEnemy);
+
+                if (distance < 2.5 && angle < 0.5) { // Mesafe ve Açı uygunsa VURDUK
+                    this.damageEnemy();
                 }
-                else if (val === 8) {
-                    loadDoor(px, pz);
+            }
+
+            damageEnemy() {
+                // Efektler
+                this.cameraShake(0.2);
+                this.spawnParticles(this.enemy.model.position.clone().add(new THREE.Vector3(0, 1.5, 0)), 10);
+                this.flashScreen();
+
+                // Crosshair Feedback
+                const ch = document.getElementById('crosshair');
+                ch.classList.add('crosshair-active');
+                setTimeout(() => ch.classList.remove('crosshair-active'), 100);
+
+                // Hasar Hesapla
+                this.enemy.hp -= CONFIG.punchDamage;
+                document.getElementById('enemy-hp').style.width = this.enemy.hp + '%';
+
+                // Rakip Animasyonu (Hit Reaction)
+                if(this.enemy.animations['hit']) {
+                    const hitAnim = this.enemy.animations['hit'];
+                    hitAnim.reset().setLoop(THREE.LoopOnce).play();
+                    // Önceki animasyonu durdurmak gerekebilir, şimdilik basit blending
                 }
-            });
-        });
 
-        function loadZombie(x, z) {
-            const loader = new GLTFLoader();
-            loader.load('Zombie.glb', (gltf) => {
-                zombieRef = gltf.scene;
-                zombieRef.position.set(x, 0, z);
-                scene.add(zombieRef);
-            }, undefined, () => {
-                // Model yoksa: Siyah, Kırmızı Gözlü "Shadow Man"
-                const geo = new THREE.CapsuleGeometry(0.5, 1.8, 4, 8);
-                const mat = new THREE.MeshStandardMaterial({ color: 0x000000 });
-                zombieRef = new THREE.Mesh(geo, mat);
-                
-                // Gözler (Parlayan)
-                const eyeGeo = new THREE.SphereGeometry(0.1);
-                const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-                const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-                const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-                leftEye.position.set(-0.2, 0.8, 0.4);
-                rightEye.position.set(0.2, 0.8, 0.4);
-                zombieRef.add(leftEye);
-                zombieRef.add(rightEye);
-
-                zombieRef.position.set(x, 1, z);
-                scene.add(zombieRef);
-            });
-        }
-
-        function loadDoor(x, z) {
-            const loader = new GLTFLoader();
-            loader.load('Door.glb', (gltf) => {
-                doorRef = gltf.scene;
-                doorRef.position.set(x, 0, z);
-                scene.add(doorRef);
-            }, undefined, () => {
-                // Model yoksa: Beyaz parlayan kapı
-                const geo = new THREE.BoxGeometry(UNIT, 3.5, 0.2);
-                const mat = new THREE.MeshStandardMaterial({ color: 0xcccccc });
-                doorRef = new THREE.Mesh(geo, mat);
-                doorRef.position.set(x, 1.75, z);
-                scene.add(doorRef);
-                
-                // Kapı Işığı
-                const l = new THREE.PointLight(0x0000ff, 5, 5);
-                l.position.set(x, 3, z);
-                scene.add(l);
-            });
-        }
-
-        // --- KONTROLLER ---
-        const controls = new PointerLockControls(camera, document.body);
-        const keys = { w:false, a:false, s:false, d:false };
-
-        document.addEventListener('keydown', (e) => {
-            if(e.code === 'KeyW') keys.w = true;
-            if(e.code === 'KeyS') keys.s = true;
-            if(e.code === 'KeyA') keys.a = true;
-            if(e.code === 'KeyD') keys.d = true;
-        });
-        document.addEventListener('keyup', (e) => {
-            if(e.code === 'KeyW') keys.w = false;
-            if(e.code === 'KeyS') keys.s = false;
-            if(e.code === 'KeyA') keys.a = false;
-            if(e.code === 'KeyD') keys.d = false;
-        });
-
-        // --- OYUN MANTIĞI ---
-        window.startGame = function() {
-            const code = document.getElementById('invite-code').value;
-            if(code === CODE) {
-                document.getElementById('menu-screen').classList.add('hidden');
-                isGameRunning = true;
-                controls.lock();
-                audioCtx.resume();
-            } else {
-                document.getElementById('error-msg').style.display = 'block';
-            }
-        }
-
-        const clock = new THREE.Clock();
-        const playerSpeed = 5.0;
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            if(!isGameRunning) {
-                renderer.render(scene, camera);
-                return;
+                if(this.enemy.hp <= 0) {
+                    this.endGame(true);
+                }
             }
 
-            const dt = clock.getDelta();
-            
-            // --- OYUNCU HAREKETİ ---
-            const direction = new THREE.Vector3();
-            const forward = new THREE.Vector3();
-            const right = new THREE.Vector3();
-            
-            // Kameranın yönünü al ama Y eksenini sıfırla (Uçmasın)
-            camera.getWorldDirection(forward);
-            forward.y = 0;
-            forward.normalize();
-            
-            right.crossVectors(forward, new THREE.Vector3(0,1,0));
-            
-            if(keys.w) direction.add(forward);
-            if(keys.s) direction.sub(forward);
-            if(keys.d) direction.add(right);
-            if(keys.a) direction.sub(right);
+            damagePlayer() {
+                this.player.hp -= CONFIG.enemyDamage;
+                document.getElementById('player-hp').style.width = this.player.hp + '%';
+                
+                // Kan Efekti (Ekran Kızarması)
+                const overlay = document.getElementById('damage-overlay');
+                overlay.style.opacity = 1;
+                setTimeout(() => overlay.style.opacity = 0, 500);
+                
+                this.cameraShake(0.5);
 
-            if(direction.length() > 0) {
-                direction.normalize();
+                if(this.player.hp <= 0) {
+                    this.endGame(false);
+                }
+            }
+
+            // --- AI SYSTEM (State Machine) ---
+            updateAI(dt) {
+                if(!this.enemy.model || this.enemy.hp <= 0) return;
+
+                const dist = this.camera.position.distanceTo(this.enemy.model.position);
                 
-                // Duvar Çarpışma Kontrolü (Basit)
-                const nextPos = camera.position.clone().add(direction.multiplyScalar(playerSpeed * dt));
-                let collide = false;
-                
-                // Oyuncunun kapladığı alan (Kutu)
-                const pBox = new THREE.Box3().setFromCenterAndSize(nextPos, new THREE.Vector3(1,1,1));
-                
-                for(let w of walls) {
-                    if(w.intersectsBox(pBox)) {
-                        collide = true;
-                        break;
+                // Rakip her zaman oyuncuya baksın (Y ekseninde)
+                this.enemy.model.lookAt(this.camera.position.x, this.enemy.model.position.y, this.camera.position.z);
+
+                // Basit Durum Makinesi
+                if (dist > 2.0) {
+                    // CHASE STATE
+                    const speed = 2.0 * dt;
+                    this.enemy.model.translateZ(speed); // TranslateZ pozitif ileri demektir (modele göre değişir)
+                    
+                    // Yürüme animasyonu varsa burada oynatılır
+                } else {
+                    // ATTACK STATE
+                    // Rastgele saldırı
+                    if(Math.random() < 0.02) { // Her frame %2 şans (Yaklaşık saniyede 1-2 vuruş)
+                         // Vuruş Animasyonu
+                         if(this.enemy.animations['attack']) {
+                             const att = this.enemy.animations['attack'];
+                             if(!att.isRunning()) att.reset().setLoop(THREE.LoopOnce).play();
+                         }
+                         
+                         // Oyuncuya hasar ver (Gecikmeli, yumruk değdiğinde)
+                         setTimeout(() => {
+                             if(this.camera.position.distanceTo(this.enemy.model.position) < 2.5) {
+                                 this.damagePlayer();
+                             }
+                         }, 500); 
                     }
                 }
-
-                if(!collide) {
-                    camera.position.copy(nextPos);
-                }
             }
 
-            // --- ZOMBİ YAPAY ZEKA (ÖLÜMCÜL) ---
-            if(zombieRef) {
-                zombieRef.lookAt(camera.position.x, zombieRef.position.y, camera.position.z);
-                
-                const dist = zombieRef.position.distanceTo(camera.position);
-                
-                // Ses Sistemi (Kalp Atışı)
-                playHeartbeat(dist);
+            // --- EFFECTS & PHYSICS ---
+            
+            spawnParticles(pos, count) {
+                // Ter/Kan damlaları
+                const geo = new THREE.BoxGeometry(0.05, 0.05, 0.05);
+                const mat = new THREE.MeshBasicMaterial({ color: 0x00d2ff }); // Mavi ter
 
-                if(dist > 1.2) {
-                    // Takip et
-                    const zSpeed = 3.8; // Oyuncudan biraz yavaş ama pes etmez
-                    zombieRef.translateZ(zSpeed * dt);
-                } else {
-                    // YAKALADI - ÖLÜM
-                    isGameRunning = false;
-                    document.getElementById('blood-overlay').style.display = 'block';
-                    document.exitPointerLock();
+                for(let i=0; i<count; i++) {
+                    const mesh = new THREE.Mesh(geo, mat);
+                    mesh.position.copy(pos);
                     
-                    // 1 saniye sonra ölüm ekranı
-                    setTimeout(() => {
-                        document.getElementById('death-screen').classList.remove('hidden');
-                    }, 1000);
+                    // Rastgele saçılma
+                    mesh.position.x += (Math.random() - 0.5);
+                    mesh.position.y += (Math.random() - 0.5);
+                    
+                    this.scene.add(mesh);
+                    
+                    // Fizik bilgisi ekle
+                    this.particles.push({
+                        mesh: mesh,
+                        vel: new THREE.Vector3((Math.random()-0.5)*0.2, Math.random()*0.2, (Math.random()-0.5)*0.2),
+                        life: 1.0
+                    });
                 }
             }
 
-            // Kapı kontrol
-            if(doorRef) {
-                if(camera.position.distanceTo(doorRef.position) < 2) {
-                    alert("KAÇIŞ BAŞARILI!");
-                    location.reload();
+            updateParticles() {
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const p = this.particles[i];
+                    p.life -= 0.02;
+                    
+                    p.vel.y -= 0.01; // Gravity
+                    p.mesh.position.add(p.vel);
+                    
+                    if(p.life <= 0) {
+                        this.scene.remove(p.mesh);
+                        this.particles.splice(i, 1);
+                    }
                 }
             }
 
-            // Zamanlayıcı
-            document.getElementById('time-display').innerText = new Date().toLocaleTimeString();
+            cameraShake(intensity) {
+                const originalY = 1.75;
+                let shakes = 0;
+                const interval = setInterval(() => {
+                    this.camera.position.y = originalY + (Math.random() - 0.5) * intensity;
+                    this.camera.rotation.z = (Math.random() - 0.5) * (intensity * 0.5);
+                    shakes++;
+                    if(shakes > 5) {
+                        clearInterval(interval);
+                        this.camera.position.y = originalY;
+                        this.camera.rotation.z = 0;
+                    }
+                }, 20);
+            }
+            
+            flashScreen() {
+                const f = document.getElementById('flash-overlay');
+                f.style.opacity = 0.3;
+                setTimeout(() => f.style.opacity = 0, 100);
+            }
 
-            renderer.render(scene, camera);
+            movePlayer(dt) {
+                if(!this.controls.isLocked) return;
+                
+                const speed = CONFIG.playerSpeed * dt;
+                if(this.keys.w) this.controls.moveForward(speed);
+                if(this.keys.s) this.controls.moveForward(-speed);
+                if(this.keys.a) this.controls.moveRight(-speed);
+                if(this.keys.d) this.controls.moveRight(speed);
+                
+                // Eldiven sallanma efekti (Walking Bobbing)
+                if(this.gloves && (this.keys.w || this.keys.a || this.keys.s || this.keys.d)) {
+                    const time = Date.now() * 0.01;
+                    this.gloves.position.y = -0.4 + Math.sin(time) * 0.02;
+                }
+            }
+
+            endGame(win) {
+                document.exitPointerLock();
+                const h1 = document.querySelector('h1');
+                h1.innerText = win ? "KNOCKOUT!" : "YOU DIED";
+                h1.style.color = win ? "#00d2ff" : "#ff416c";
+                h1.style.textShadow = "0 0 20px currentColor";
+                
+                document.querySelector('h2').innerText = win ? "NEW CHAMPION" : "TRY AGAIN";
+                document.getElementById('start-btn').innerText = "RESTART";
+                document.getElementById('start-btn').onclick = () => location.reload();
+                document.getElementById('start-screen').style.display = 'flex';
+            }
+
+            onResize() {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.composer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                
+                const dt = this.clock.getDelta();
+                
+                this.movePlayer(dt);
+                this.updateAI(dt);
+                this.updateParticles();
+
+                // Animasyonlar
+                this.mixers.forEach(mixer => mixer.update(dt));
+
+                // Post-Processing Render
+                this.composer.render();
+            }
         }
 
-        animate();
+        // --- INIT ---
+        window.onload = () => {
+            const game = new GameEngine();
+        };
 
-        // Resize
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
     </script>
 </body>
 </html>
