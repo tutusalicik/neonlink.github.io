@@ -2,41 +2,35 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>ULTIMATE BOXING - AI OPPONENT</title>
+    <title>FINAL BOXING GAME</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap');
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Oswald', sans-serif; user-select: none; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Arial', sans-serif; }
         
-        #debug-console {
-            position: absolute; bottom: 10px; left: 10px; width: 400px; height: 200px;
-            background: rgba(0,0,0,0.8); color: #0f0; font-family: monospace; font-size: 12px;
-            overflow-y: auto; z-index: 9999; padding: 10px; border: 1px solid #333; pointer-events: none;
+        /* Nişangah (Tam orta nokta) */
+        #crosshair {
+            position: absolute; top: 50%; left: 50%; width: 10px; height: 10px;
+            background: rgba(255, 0, 0, 0.5); border-radius: 50%;
+            transform: translate(-50%, -50%); pointer-events: none; z-index: 10;
         }
-        .log-error { color: #ff3333; font-weight: bold; }
-        .log-warn { color: #ffaa00; }
-        .log-success { color: #33ff33; }
 
-        #loading-screen {
+        /* Can Barları */
+        #ui {
+            position: absolute; top: 20px; left: 20px; right: 20px;
+            display: flex; justify-content: space-between; pointer-events: none;
+        }
+        .bar-wrap { width: 40%; background: #333; height: 30px; border: 2px solid #fff; }
+        .bar { height: 100%; transition: width 0.2s; }
+        #p-hp { width: 100%; background: #00ff00; }
+        #e-hp { width: 100%; background: #ff0000; }
+
+        /* Başlama Ekranı */
+        #start-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #111; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 100;
+            background: rgba(0,0,0,0.9); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; color: white; z-index: 20;
         }
-        #loading-bar-container { width: 300px; height: 4px; background: #333; margin-top: 20px; }
-        #loading-bar { width: 0%; height: 100%; background: #00d2ff; transition: width 0.2s; }
-        #loading-text { color: #fff; margin-top: 10px; font-size: 14px; letter-spacing: 2px; }
-        
-        #ui-layer { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        .hud-bar { position: absolute; top: 30px; width: 40%; height: 30px; border: 2px solid #fff; transform: skewX(-20deg); }
-        #player-hp-bar { left: 5%; border-color: #00d2ff; }
-        #enemy-hp-bar { right: 5%; border-color: #ff416c; }
-        .hp-fill { height: 100%; width: 100%; transition: width 0.2s; }
-        
-        #start-btn {
-            display: none; padding: 15px 40px; font-size: 24px; background: #fff; border: none;
-            cursor: pointer; font-family: 'Oswald', sans-serif; font-weight: bold; margin-top: 20px;
-        }
+        button { padding: 15px 40px; font-size: 24px; cursor: pointer; background: #ff0000; color: white; border: none; font-weight: bold; }
     </style>
-    
     <script type="importmap">
         {
             "imports": {
@@ -48,18 +42,17 @@
 </head>
 <body>
 
-    <div id="debug-console">Wait... System Initializing...<br></div>
-
-    <div id="loading-screen">
-        <h1 style="color:white; font-size: 40px; margin:0;">LOADING ASSETS</h1>
-        <div id="loading-bar-container"><div id="loading-bar"></div></div>
-        <div id="loading-text">Connecting to ring...</div>
-        <button id="start-btn">START FIGHT</button>
+    <div id="crosshair"></div>
+    
+    <div id="ui">
+        <div class="bar-wrap"><div id="p-hp" class="bar"></div></div>
+        <div class="bar-wrap"><div id="e-hp" class="bar"></div></div>
     </div>
 
-    <div id="ui-layer">
-        <div id="player-hp-bar" class="hud-bar"><div class="hp-fill" style="background:#00d2ff" id="p-hp"></div></div>
-        <div id="enemy-hp-bar" class="hud-bar"><div class="hp-fill" style="background:#ff416c" id="e-hp"></div></div>
+    <div id="start-screen">
+        <h1>BOKS MAÇI HAZIR</h1>
+        <p id="loading-msg">Yükleniyor...</p>
+        <button id="start-btn" style="display:none">RİNGE ÇIK</button>
     </div>
 
     <script type="module">
@@ -67,296 +60,243 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
-        const consoleDiv = document.getElementById('debug-console');
-        function screenLog(msg, type='normal') {
-            const span = document.createElement('div');
-            span.innerText = `> ${msg}`;
-            if(type==='error') span.className = 'log-error';
-            if(type==='success') span.className = 'log-success';
-            consoleDiv.appendChild(span);
-            consoleDiv.scrollTop = consoleDiv.scrollHeight;
-            console.log(msg);
-        }
-
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 100);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        const clock = new THREE.Clock();
-        let controls;
-        let mixerEnemy;
-        let enemyModel, glovesModel;
-        let enemyAnimations = {};
-        let enemyAction;
-        
-        const gameState = {
-            playerHp: 100,
-            enemyHp: 100,
-            isPunching: false,
-            enemyCanAttack: true
+        // --- AYARLAR (Buradan ince ayar yapabilirsin) ---
+        const CONFIG = {
+            scale: 40.0,         // Ring ve Adamın büyüklüğü (40 kat)
+            gloveScale: 0.08,    // Eldivenin boyutu (Kameraya sığması için küçük olmalı)
+            cameraHeight: 13.0,  // Oyuncunun boyu (Ring scale'ine uygun olmalı)
+            moveSpeed: 25.0,     // Hareket hızı
+            punchDist: 15.0      // Vuruş mesafesi
         };
 
-        function init() {
-            screenLog("Engine Starting...");
+        // --- SAHNE KURULUMU ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x111111);
+        scene.fog = new THREE.FogExp2(0x111111, 0.01);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, CONFIG.cameraHeight, 20); // Biraz geriden başla
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        // --- IŞIKLAR ---
+        const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambient);
+        
+        const spot = new THREE.SpotLight(0xffffff, 2);
+        spot.position.set(0, 100, 0);
+        spot.castShadow = true;
+        scene.add(spot);
+
+        // --- OYUN DEĞİŞKENLERİ ---
+        let enemy, gloves;
+        let mixerEnemy;
+        let enemyAction; // Şu anki animasyon
+        let animations = {};
+        let isPunching = false;
+        let playerHp = 100;
+        let enemyHp = 100;
+
+        const loader = new GLTFLoader();
+        const manager = new THREE.LoadingManager();
+
+        // --- 1. RİNGİ YÜKLE ---
+        loader.load('./Boxing Ring.glb', (gltf) => {
+            const ring = gltf.scene;
+            ring.scale.set(CONFIG.scale, CONFIG.scale, CONFIG.scale);
+            ring.position.set(0, -CONFIG.scale * 0.1, 0); // Biraz aşağı al
+            scene.add(ring);
+        });
+
+        // --- 2. DÜŞMANI YÜKLE ---
+        loader.load('./Male Fighter.glb', (gltf) => {
+            enemy = gltf.scene;
+            enemy.scale.set(CONFIG.scale, CONFIG.scale, CONFIG.scale);
+            enemy.position.set(0, 0, -30); // Karşı köşeye koy
             
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true;
-            document.body.appendChild(renderer.domElement);
-
-            const ambient = new THREE.AmbientLight(0xffffff, 0.4);
-            scene.add(ambient);
-            
-            const spot = new THREE.SpotLight(0xffffff, 100);
-            spot.position.set(0, 10, 0);
-            spot.castShadow = true;
-            scene.add(spot);
-
-            // Kamera Pozisyonu (Ringin içinde, göz hizası)
-            camera.position.set(0, 1.6, 2);
-
-            controls = new PointerLockControls(camera, document.body);
-
-            loadAssets();
-            animate();
-            
-            document.getElementById('start-btn').addEventListener('click', () => {
-                document.getElementById('loading-screen').style.display = 'none';
-                document.getElementById('ui-layer').style.display = 'block';
-                controls.lock();
+            // Animasyonları kaydet
+            mixerEnemy = new THREE.AnimationMixer(enemy);
+            gltf.animations.forEach(clip => {
+                animations[clip.name] = mixerEnemy.clipAction(clip);
             });
             
-            document.addEventListener('click', () => {
-                if(controls.isLocked) punch();
-            });
+            // İlk duruş (Idle)
+            // Eğer Idle animasyonu varsa onu oynat, yoksa ilkini oynat
+            const idleAnim = animations['Idle'] || animations['idle'] || mixerEnemy.clipAction(gltf.animations[0]);
+            if(idleAnim) {
+                enemyAction = idleAnim;
+                idleAnim.play();
+            }
+
+            scene.add(enemy);
+            checkLoad();
+        });
+
+        // --- 3. ELDİVENLERİ YÜKLE (KAMERAYA BAĞLA!) ---
+        loader.load('./Boxing Gloves.glb', (gltf) => {
+            gloves = gltf.scene;
+            // Eldivenler kameranın içinde olduğu için "World Scale"den etkilenmez.
+            // O yüzden 40 kat büyütmüyoruz, normal boyutta (0.1 civarı) bırakıyoruz.
+            gloves.scale.set(CONFIG.gloveScale, CONFIG.gloveScale, CONFIG.gloveScale);
             
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
-        }
+            // POZİSYON ÇOK ÖNEMLİ: Kameranın (0,0,0) noktasına göre ayarla
+            // x: sağ/sol, y: yukarı/aşağı, z: ileri/geri
+            gloves.position.set(0.4, -0.5, -1.0); 
+            gloves.rotation.set(0, Math.PI, 0); // Bize dönük
 
-        function loadAssets() {
-            const manager = new THREE.LoadingManager();
-            const loader = new GLTFLoader(manager);
+            camera.add(gloves); // Kameranın çocuğu yap (FPS Görünümü)
+            scene.add(camera);  // Kamerayı sahneye ekle
+            checkLoad();
+        });
 
-            manager.onProgress = (url, itemsLoaded, itemsTotal) => {
-                const percent = (itemsLoaded / itemsTotal) * 100;
-                document.getElementById('loading-bar').style.width = percent + '%';
-                document.getElementById('loading-text').innerText = `Loading: ${url}`;
-                screenLog(`Loaded: ${url}`, 'success');
-            };
-
-            manager.onError = (url) => {
-                screenLog(`ERROR LOADING: ${url}`, 'error');
-                screenLog(`HATA: '${url}' bulunamadı. Dosya adını ve klasörü kontrol et!`, 'error');
-            };
-
-            manager.onLoad = () => {
-                screenLog("ALL ASSETS READY!", 'success');
-                document.getElementById('loading-text').innerText = "READY TO FIGHT";
+        let loadedItems = 0;
+        function checkLoad() {
+            loadedItems++;
+            if(loadedItems >= 2) { // Enemy ve Gloves önemli
+                document.getElementById('loading-msg').style.display = 'none';
                 document.getElementById('start-btn').style.display = 'block';
-            };
-
-            // 1. RING
-            loader.load('./Boxing Ring.glb', (gltf) => {
-                const model = gltf.scene;
-                model.position.set(0, 0, 0);
-                model.traverse(c => { if(c.isMesh) c.receiveShadow = true; });
-                scene.add(model);
-            }, null, (err) => handleLoadError('Ring', err));
-
-            // 2. MALE FIGHTER (Düşman)
-            loader.load('./Male Fighter.glb', (gltf) => {
-                enemyModel = gltf.scene;
-                enemyModel.position.set(0, 0, -2); // Başlangıç pozisyonu
-                enemyModel.traverse(c => { if(c.isMesh) { c.castShadow = true; c.receiveShadow = true; }});
-                scene.add(enemyModel);
-
-                mixerEnemy = new THREE.AnimationMixer(enemyModel);
-                if(gltf.animations.length > 0) {
-                    screenLog(`Fighter has ${gltf.animations.length} animations.`, 'success');
-                    gltf.animations.forEach(anim => {
-                        enemyAnimations[anim.name] = mixerEnemy.clipAction(anim);
-                    });
-                    // İlk animasyonu (Idle) oynat
-                    if (enemyAnimations['Idle']) {
-                        enemyAction = enemyAnimations['Idle'];
-                        enemyAction.play();
-                    } else if (gltf.animations[0]) {
-                        enemyAction = mixerEnemy.clipAction(gltf.animations[0]);
-                        enemyAction.play();
-                    }
-                } else {
-                    screenLog("UYARI: Fighter modelinde animasyon yok!", 'warn');
-                }
-            }, null, (err) => {
-                handleLoadError('Male Fighter', err);
-                const geo = new THREE.BoxGeometry(1, 2, 1);
-                const mat = new THREE.MeshStandardMaterial({color: 0xff0000});
-                enemyModel = new THREE.Mesh(geo, mat);
-                enemyModel.position.set(0, 1, -2);
-                scene.add(enemyModel);
-                screenLog("YEDEK KUTU YÜKLENDİ (Oyun çalışsın diye)", 'warn');
-            });
-
-            // 3. GLOVES (Eldivenler - Kameraya bağlı)
-            loader.load('./Boxing Gloves.glb', (gltf) => {
-                glovesModel = gltf.scene;
-                glovesModel.scale.set(0.08, 0.08, 0.08); // Ölçek
-                glovesModel.position.set(0.3, -0.3, -0.5); // FPS Pozisyonu
-                glovesModel.rotation.set(0, Math.PI, 0); // Bize dönük
-                camera.add(glovesModel); // Kameraya ekle
-                scene.add(camera); // Kamerayı sahneye ekle
-            }, null, (err) => {
-                handleLoadError('Gloves', err);
-                const geo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-                const mat = new THREE.MeshStandardMaterial({color: 0x0000ff});
-                glovesModel = new THREE.Mesh(geo, mat);
-                glovesModel.position.set(0.3, -0.4, -0.5);
-                camera.add(glovesModel);
-                scene.add(camera);
-            });
+            }
         }
 
-        function handleLoadError(name, err) {
-            screenLog(`CRITICAL: ${name} Failed!`, 'error');
-            console.error(err);
-        }
+        // --- KONTROLLER ---
+        const controls = new PointerLockControls(camera, document.body);
+        const keys = { w: false, s: false, a: false, d: false };
 
-        // --- OYUN MANTIĞI ---
+        document.getElementById('start-btn').addEventListener('click', () => {
+            document.getElementById('start-screen').style.display = 'none';
+            controls.lock();
+        });
+
+        document.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+        document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+        
+        document.addEventListener('mousedown', () => {
+            if(controls.isLocked) punch();
+        });
+
+        // --- VURUŞ VE AI SİSTEMİ ---
         function punch() {
-            if(gameState.isPunching || !glovesModel) return;
-            gameState.isPunching = true;
+            if(isPunching || !gloves) return;
+            isPunching = true;
 
-            // Basit eldiven animasyonu
-            let zOrig = -0.5;
-            let zTarget = -1.0;
-            let speed = 0.1;
-            let dir = 1;
+            // 1. Görsel Efekt (Eldiven ileri gider)
+            const originalZ = -1.0;
+            const punchZ = -2.5; // Daha ileri gitsin
+            let speed = 0.2;
             
             const interval = setInterval(() => {
-                glovesModel.position.z -= speed * dir;
-                if(glovesModel.position.z < zTarget) dir = -1;
-                if(glovesModel.position.z > zOrig) {
-                    glovesModel.position.z = zOrig;
-                    gameState.isPunching = false;
+                // İleri git
+                if(speed > 0 && gloves.position.z > punchZ) {
+                    gloves.position.z -= speed;
+                } 
+                // Geri gel
+                else if (gloves.position.z < originalZ) {
+                    speed = -0.2; // Yönü ters çevir
+                    gloves.position.z -= speed;
+                } 
+                // Dur
+                else {
+                    gloves.position.z = originalZ;
+                    isPunching = false;
                     clearInterval(interval);
                 }
             }, 16);
 
-            // Vuruş Kontrolü (Oyuncu -> Düşman)
-            if(enemyModel) {
-                const dist = camera.position.distanceTo(enemyModel.position);
-                const dirVec = new THREE.Vector3();
-                camera.getWorldDirection(dirVec);
-                const enemyDir = enemyModel.position.clone().sub(camera.position).normalize();
-                const angle = dirVec.angleTo(enemyDir);
+            // 2. Hasar Kontrolü
+            if(enemy) {
+                const dist = camera.position.distanceTo(enemy.position);
+                // Düşman önümüzde mi?
+                const dir = new THREE.Vector3();
+                camera.getWorldDirection(dir);
+                const enemyDir = enemy.position.clone().sub(camera.position).normalize();
+                const angle = dir.angleTo(enemyDir);
 
-                if(dist < 2.5 && angle < 0.5) { // Mesafe ve açı kontrolü
-                    screenLog("HIT!", 'success');
-                    gameState.enemyHp -= 10;
-                    document.getElementById('e-hp').style.width = gameState.enemyHp + '%';
+                // Mesafe ve Açı uygunsa vur
+                if(dist < CONFIG.punchDist && angle < 0.8) {
+                    enemyHp -= 10;
+                    document.getElementById('e-hp').style.width = enemyHp + '%';
                     
-                    // Düşman hasar alma animasyonu (varsa)
-                    if (enemyAnimations['Hit']) {
-                        enemyAction.stop();
-                        enemyAction = enemyAnimations['Hit'];
-                        enemyAction.reset().setLoop(THREE.LoopOnce).play();
-                        enemyAction.clampWhenFinished = true;
-                        mixerEnemy.addEventListener('finished', function restoreIdle() {
-                             if (enemyAction === enemyAnimations['Hit']) {
-                                enemyAction.stop();
-                                enemyAction = enemyAnimations['Idle'];
-                                enemyAction.play();
-                                mixerEnemy.removeEventListener('finished', restoreIdle);
-                             }
-                        });
-                    }
+                    // Geri tepme efekti (Basit)
+                    enemy.position.z -= 2;
 
-                    if(gameState.enemyHp <= 0) {
-                        screenLog("KNOCKOUT! YOU WIN!", 'success');
-                        enemyModel.rotation.x = -Math.PI / 2; // Yere yatır
-                        // Düşman ölünce AI dursun
-                        enemyModel = null;
+                    // Ölüm kontrolü
+                    if(enemyHp <= 0) {
+                        enemy.rotation.x = -Math.PI / 2; // Yere yat
+                        enemy = null; // AI dursun
+                        alert("KAZANDIN!");
+                        location.reload();
                     }
                 }
             }
         }
 
-        // --- YAPAY ZEKA (AI) ---
+        // --- YAPAY ZEKA ---
         function updateAI(dt) {
-            if (!enemyModel || gameState.enemyHp <= 0) return;
+            if(!enemy || enemyHp <= 0) return;
 
-            const distance = enemyModel.position.distanceTo(camera.position);
-            const attackRange = 2.0;
-            const moveSpeed = 1.5 * dt;
+            const dist = camera.position.distanceTo(enemy.position);
+            
+            // Yüzünü bize dönsün (Sadece Y ekseninde)
+            enemy.lookAt(camera.position.x, enemy.position.y, camera.position.z);
 
-            // Her zaman oyuncuya dön
-            enemyModel.lookAt(camera.position.x, enemyModel.position.y, camera.position.z);
+            // Takip Et
+            if(dist > 10) { // Çok yakın değilse yaklaşsın
+                const speed = 15.0 * dt; // Hızlı gelsin
+                enemy.translateZ(speed); // Modelin "önüne" doğru git
+            } 
+            // Saldır
+            else {
+                if(Math.random() < 0.05) { // %5 şansla vur
+                    playerHp -= 5;
+                    document.getElementById('p-hp').style.width = playerHp + '%';
+                    
+                    // Ekran sarsılsın
+                    camera.position.y -= 0.5;
+                    setTimeout(() => camera.position.y += 0.5, 100);
 
-            if (distance > attackRange) {
-                // Takip et (Yürüme)
-                enemyModel.translateZ(moveSpeed);
-                if (enemyAnimations['Walk'] && enemyAction !== enemyAnimations['Walk']) {
-                    enemyAction.stop();
-                    enemyAction = enemyAnimations['Walk'];
-                    enemyAction.play();
-                }
-            } else {
-                // Saldır (Yumruk)
-                if (gameState.enemyCanAttack) {
-                    if (enemyAnimations['Punch'] && enemyAction !== enemyAnimations['Punch']) {
-                        enemyAction.stop();
-                        enemyAction = enemyAnimations['Punch'];
-                        enemyAction.reset().setLoop(THREE.LoopOnce).play();
-                        enemyAction.clampWhenFinished = true;
-                        
-                        gameState.enemyCanAttack = false;
-                        // Saldırı animasyonu bitince hasar ver
-                        setTimeout(() => {
-                             if (camera.position.distanceTo(enemyModel.position) <= attackRange) {
-                                 gameState.playerHp -= 15;
-                                 document.getElementById('p-hp').style.width = gameState.playerHp + '%';
-                                 screenLog("OUCH! Enemy hit you!", 'error');
-                                 if (gameState.playerHp <= 0) {
-                                     screenLog("YOU LOSE!", 'error');
-                                     controls.unlock();
-                                 }
-                             }
-                        }, 500); // Animasyonun vuruş anına göre ayarla
-
-                        // Saldırı sonrası bekleme süresi
-                        setTimeout(() => {
-                            gameState.enemyCanAttack = true;
-                            if (enemyAction === enemyAnimations['Punch']) {
-                                enemyAction.stop();
-                                enemyAction = enemyAnimations['Idle'];
-                                enemyAction.play();
-                            }
-                        }, 2000); // 2 saniye bekle
-                    }
-                } else if (enemyAction !== enemyAnimations['Punch'] && enemyAction !== enemyAnimations['Hit']) {
-                     // Saldıramıyorsa ve hasar almıyorsa bekle (Idle)
-                     if (enemyAnimations['Idle'] && enemyAction !== enemyAnimations['Idle']) {
-                        enemyAction.stop();
-                        enemyAction = enemyAnimations['Idle'];
-                        enemyAction.play();
+                    if(playerHp <= 0) {
+                        controls.unlock();
+                        alert("NAKAVT! KAYBETTİN.");
+                        location.reload();
                     }
                 }
             }
         }
+
+        // --- OYUN DÖNGÜSÜ ---
+        const clock = new THREE.Clock();
 
         function animate() {
             requestAnimationFrame(animate);
             const dt = clock.getDelta();
-            
+
+            // Oyuncu Hareketi
+            if(controls.isLocked) {
+                const speed = CONFIG.moveSpeed * dt;
+                if(keys.w) controls.moveForward(speed);
+                if(keys.s) controls.moveForward(-speed);
+                if(keys.a) controls.moveRight(-speed);
+                if(keys.d) controls.moveRight(speed);
+            }
+
+            // Düşman ve Animasyonlar
             if(mixerEnemy) mixerEnemy.update(dt);
             updateAI(dt);
-            
+
             renderer.render(scene, camera);
         }
 
-        init();
+        // Yeniden boyutlandırma
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
 
     </script>
 </body>
