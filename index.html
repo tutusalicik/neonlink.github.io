@@ -2,44 +2,19 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>ULTIMATE WEB BOXING UE5-STYLE</title>
+    <title>Fail-Safe Boxing</title>
     <style>
-        /* --- CINEMATIC UI --- */
-        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap');
-
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Oswald', sans-serif; user-select: none; }
-        
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-sizing: border-box; }
-        
-        /* Health Bars */
-        .hud-top { display: flex; justify-content: space-between; width: 100%; padding: 20px 50px; }
-        .bar-container { width: 40%; }
-        .bar-label { color: #fff; font-size: 24px; text-transform: uppercase; text-shadow: 0 0 10px rgba(0,0,0,0.8); margin-bottom: 5px; display: block;}
-        .health-track { width: 100%; height: 20px; background: rgba(50,50,50,0.8); border: 2px solid rgba(255,255,255,0.3); transform: skewX(-20deg); overflow: hidden; }
-        .health-fill { height: 100%; transition: width 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        
-        #player-hp { background: linear-gradient(90deg, #00d2ff, #3a7bd5); width: 100%; box-shadow: 0 0 15px #00d2ff; }
-        #enemy-hp { background: linear-gradient(90deg, #ff416c, #ff4b2b); width: 100%; box-shadow: 0 0 15px #ff416c; }
-
-        /* Crosshair */
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; border: 2px solid rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); transition: all 0.1s; }
-        .crosshair-active { border-color: #ff0000 !important; width: 20px !important; height: 20px !important; background: rgba(255,0,0,0.2); }
-
-        /* Hit Effects & Overlays */
-        #damage-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, transparent 50%, rgba(255,0,0,0.6) 100%); opacity: 0; transition: opacity 0.5s; pointer-events: none; }
-        #flash-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; pointer-events: none; mix-blend-mode: overlay; }
-
-        /* Start Screen */
-        #start-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; pointer-events: auto; backdrop-filter: blur(5px); }
-        h1 { font-size: 80px; color: transparent; -webkit-text-stroke: 2px #fff; margin: 0; letter-spacing: 10px; text-transform: uppercase; }
-        h2 { font-size: 30px; color: #ff4b2b; letter-spacing: 5px; margin-top: -10px; text-transform: uppercase; }
-        .btn { margin-top: 50px; padding: 15px 50px; font-size: 24px; background: #fff; border: none; font-family: 'Oswald', sans-serif; cursor: pointer; transform: skewX(-20deg); transition: 0.3s; font-weight: bold; }
-        .btn:hover { background: #ff4b2b; color: white; box-shadow: 0 0 20px #ff4b2b; transform: skewX(-20deg) scale(1.1); }
-        
-        #loading-text { color: #888; margin-top: 20px; font-size: 14px; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+        body { margin: 0; overflow: hidden; background: #000; font-family: monospace; color: lime; }
+        #debug-panel {
+            position: absolute; top: 10px; left: 10px; padding: 10px;
+            background: rgba(0,0,0,0.8); border: 1px solid lime; pointer-events: none;
+        }
+        #center-dot {
+            position: absolute; top: 50%; left: 50%; width: 10px; height: 10px;
+            background: red; border-radius: 50%; transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
     </style>
-
     <script type="importmap">
         {
             "imports": {
@@ -50,429 +25,165 @@
     </script>
 </head>
 <body>
-
-    <div id="damage-overlay"></div>
-    <div id="flash-overlay"></div>
-
-    <div id="ui-layer">
-        <div class="hud-top">
-            <div class="bar-container">
-                <span class="bar-label">PLAYER</span>
-                <div class="health-track"><div id="player-hp" class="health-fill"></div></div>
-            </div>
-            <div class="bar-container" style="text-align: right;">
-                <span class="bar-label">OPPONENT</span>
-                <div class="health-track" style="justify-content: flex-end; display: flex;"><div id="enemy-hp" class="health-fill"></div></div>
-            </div>
-        </div>
-        <div id="crosshair"></div>
+    <div id="debug-panel">
+        <strong>SİSTEM DURUMU:</strong><br>
+        <span id="status-ring">Ring: Bekleniyor...</span><br>
+        <span id="status-enemy">Enemy: Bekleniyor...</span><br>
+        <span id="status-gloves">Gloves: Bekleniyor...</span><br>
+        <br>
+        <em>Oynamak için ekrana tıkla (WASD + Mouse)</em><br>
+        <em>Vurmak için: Sol Tık</em>
     </div>
-
-    <div id="start-screen">
-        <h1>IRON FIST</h1>
-        <h2>Heavyweight Championship</h2>
-        <div id="loading-text">ASSETS LOADING...</div>
-        <button class="btn" id="start-btn" style="display:none;">ENTER THE RING</button>
-    </div>
+    <div id="center-dot"></div>
 
     <script type="module">
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
-        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
-        // --- GLOBAL CONFIGURATION (Müşteri Ayarları) ---
-        const CONFIG = {
-            playerSpeed: 4.0,
-            mouseSensitivity: 0.002,
-            enemyScale: 1.0,  // Rakip boyutu
-            gloveScale: 0.1,  // Eldiven boyutu
-            punchDamage: 10,
-            enemyDamage: 15,
-            debugMode: false
-        };
+        // --- TEMEL KURULUM ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x202020);
+        
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 1.7, 3); // Biraz geriden başlatıyoruz
 
-        // --- ENGINE CORE ---
-        class GameEngine {
-            constructor() {
-                this.scene = new THREE.Scene();
-                this.scene.background = new THREE.Color(0x050505);
-                this.scene.fog = new THREE.FogExp2(0x050505, 0.015);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
-                this.camera.position.set(0, 1.75, 0);
+        // Işıklandırma
+        const light = new THREE.DirectionalLight(0xffffff, 2);
+        light.position.set(5, 10, 5);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 
-                this.renderer = new THREE.WebGLRenderer({ antialias: false });
-                this.renderer.setSize(window.innerWidth, window.innerHeight);
-                this.renderer.setPixelRatio(window.devicePixelRatio);
-                this.renderer.shadowMap.enabled = true;
-                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-                this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                this.renderer.toneMappingExposure = 0.8;
-                document.body.appendChild(this.renderer.domElement);
+        // --- YEDEK PARÇALAR (Eğer model yüklenmezse bunlar görünecek) ---
+        
+        // 1. Yedek Zemin (Ring gelmezse)
+        const floorGeo = new THREE.PlaneGeometry(20, 20);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+        const backupFloor = new THREE.Mesh(floorGeo, floorMat);
+        backupFloor.rotation.x = -Math.PI / 2;
+        scene.add(backupFloor);
 
-                // Post-Processing
-                this.composer = new EffectComposer(this.renderer);
-                const renderPass = new RenderPass(this.scene, this.camera);
-                this.composer.addPass(renderPass);
+        // 2. Yedek Düşman (Kırmızı Kutu)
+        const enemyGeo = new THREE.BoxGeometry(1, 2, 1);
+        const enemyMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+        let enemyContainer = new THREE.Mesh(enemyGeo, enemyMat);
+        enemyContainer.position.set(0, 1, -3); // Karşıda
+        scene.add(enemyContainer);
 
-                const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-                bloomPass.threshold = 0.2;
-                bloomPass.strength = 0.4;
-                bloomPass.radius = 0.5;
-                this.composer.addPass(bloomPass);
-                
-                const outputPass = new OutputPass();
-                this.composer.addPass(outputPass);
+        // 3. Yedek Eldiven (Mavi Kutu - Kameraya bağlı)
+        const gloveGeo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+        const gloveMat = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+        let gloveContainer = new THREE.Mesh(gloveGeo, gloveMat);
+        gloveContainer.position.set(0.4, -0.4, -0.5);
+        camera.add(gloveContainer);
+        scene.add(camera);
 
-                this.clock = new THREE.Clock();
-                this.controls = new PointerLockControls(this.camera, document.body);
-                
-                this.assets = {};
-                this.mixers = [];
-                this.particles = [];
-                
-                this.setupLights();
-                this.setupInputs();
-                
-                // Game States
-                this.player = { hp: 100, isPunching: false, canPunch: true };
-                this.enemy = { hp: 100, state: 'IDLE', action: null, model: null, mixer: null, animations: {} };
-                
-                this.loadAssets();
-                window.addEventListener('resize', () => this.onResize());
-            }
+        // --- MODEL YÜKLEME SİSTEMİ ---
+        const loader = new GLTFLoader();
+        let mixer; // Animasyon oynatıcı
 
-            setupLights() {
-                const ambient = new THREE.HemisphereLight(0x444444, 0x000000, 0.4);
-                this.scene.add(ambient);
-
-                const spot = new THREE.SpotLight(0xffffff, 150);
-                spot.position.set(0, 8, 0);
-                spot.angle = Math.PI / 6;
-                spot.penumbra = 0.5;
-                spot.decay = 1.5;
-                spot.distance = 50;
-                spot.castShadow = true;
-                spot.shadow.mapSize.width = 2048;
-                spot.shadow.mapSize.height = 2048;
-                spot.shadow.bias = -0.0001;
-                this.scene.add(spot);
-
-                const rimLight = new THREE.DirectionalLight(0x3366ff, 2);
-                rimLight.position.set(0, 2, -5);
-                this.scene.add(rimLight);
-            }
-
-            loadAssets() {
-                const loader = new GLTFLoader();
-                const manager = new THREE.LoadingManager();
-
-                manager.onLoad = () => {
-                    document.getElementById('loading-text').style.display = 'none';
-                    const btn = document.getElementById('start-btn');
-                    btn.style.display = 'block';
-                    btn.addEventListener('click', () => {
-                        document.getElementById('start-screen').style.display = 'none';
-                        this.controls.lock();
-                        this.animate();
-                    });
-                };
-
-                manager.onError = (url) => {
-                    console.error('Hata oluştu:', url);
-                };
-
-                // 1. RING
-                loader.load('./Boxing Ring.glb', (gltf) => {
-                    const model = gltf.scene;
-                    model.traverse(o => { if(o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-                    this.scene.add(model);
-                }, undefined, (err) => console.log("Ring Yüklenemedi, devam ediliyor..."));
-
-                // 2. ENEMY (MALE FIGHTER)
-                loader.load('./Male Fighter.glb', (gltf) => {
-                    const model = gltf.scene;
-                    model.position.set(0, 0, -2.5);
-                    model.scale.set(CONFIG.enemyScale, CONFIG.enemyScale, CONFIG.enemyScale);
-                    model.traverse(o => { if(o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-                    this.scene.add(model);
-                    this.enemy.model = model;
-
-                    // Animation System
-                    const mixer = new THREE.AnimationMixer(model);
-                    this.mixers.push(mixer);
-                    this.enemy.mixer = mixer;
-                    
-                    if(gltf.animations.length > 0) {
-                        gltf.animations.forEach((clip) => {
-                            const name = clip.name.toLowerCase();
-                            let action = mixer.clipAction(clip);
-                            
-                            if(name.includes('idle')) this.enemy.animations['idle'] = action;
-                            else if(name.includes('punch') || name.includes('attack')) this.enemy.animations['attack'] = action;
-                            else if(name.includes('hit') || name.includes('reaction')) this.enemy.animations['hit'] = action;
-                            else this.enemy.animations[name] = action;
-                        });
-
-                        // Başlangıç animasyonu
-                        if(this.enemy.animations['idle']) this.enemy.animations['idle'].play();
-                        else mixer.clipAction(gltf.animations[0]).play();
-                    }
-                }, undefined, (err) => {
-                    console.error("Male Fighter Yüklenemedi:", err);
-                    // Hata olsa bile oyunun çökmemesi için boş nesne
-                    this.enemy.model = new THREE.Object3D(); 
-                }, manager);
-
-                // 3. PLAYER (GLOVES)
-                loader.load('./Boxing Gloves.glb', (gltf) => {
-                    this.gloves = gltf.scene;
-                    this.gloves.scale.set(CONFIG.gloveScale, CONFIG.gloveScale, CONFIG.gloveScale);
-                    this.gloves.position.set(0.3, -0.4, -0.5);
-                    this.gloves.rotation.set(0, Math.PI, 0);
-                    this.camera.add(this.gloves);
-                    this.scene.add(this.camera);
-                }, undefined, (err) => console.log("Eldiven Yüklenemedi"), manager);
-            }
-
-            setupInputs() {
-                this.keys = { w: false, a: false, s: false, d: false };
-                document.addEventListener('keydown', (e) => this.keys[e.key.toLowerCase()] = true);
-                document.addEventListener('keyup', (e) => this.keys[e.key.toLowerCase()] = false);
-                
-                document.addEventListener('mousedown', () => {
-                    if(this.controls.isLocked) this.playerPunch();
-                });
-            }
-
-            // --- GAMEPLAY MECHANICS ---
-
-            playerPunch() {
-                if(!this.player.canPunch || !this.gloves) return;
-                
-                this.player.isPunching = true;
-                this.player.canPunch = false;
-
-                // 1. Procedural Animation
-                const startZ = -0.5;
-                const targetZ = -1.2;
-                let progress = 0;
-                
-                const isRight = Math.random() > 0.5;
-                const armOffset = isRight ? 0.3 : -0.3;
-                this.gloves.position.x = armOffset; 
-
-                const punchInterval = setInterval(() => {
-                    progress += 0.15;
-                    if(progress < 1) {
-                        this.gloves.position.z = THREE.MathUtils.lerp(startZ, targetZ, progress);
-                    } else if (progress < 2) {
-                        this.gloves.position.z = THREE.MathUtils.lerp(targetZ, startZ, progress - 1);
-                    } else {
-                        clearInterval(punchInterval);
-                        this.gloves.position.z = startZ;
-                        this.player.isPunching = false;
-                        setTimeout(() => this.player.canPunch = true, 300);
-                    }
-                }, 16);
-
-                this.checkHit();
-            }
-
-            checkHit() {
-                if(!this.enemy.model) return;
-
-                const playerPos = new THREE.Vector3();
-                const enemyPos = new THREE.Vector3();
-                this.camera.getWorldPosition(playerPos);
-                this.enemy.model.getWorldPosition(enemyPos);
-                
-                const distance = playerPos.distanceTo(enemyPos);
-                const direction = new THREE.Vector3();
-                this.camera.getWorldDirection(direction);
-                
-                const toEnemy = enemyPos.clone().sub(playerPos).normalize();
-                const angle = direction.angleTo(toEnemy);
-
-                if (distance < 3.0 && angle < 0.6) { 
-                    this.damageEnemy();
-                }
-            }
-
-            damageEnemy() {
-                this.cameraShake(0.2);
-                if(this.enemy.model) {
-                    this.spawnParticles(this.enemy.model.position.clone().add(new THREE.Vector3(0, 1.5, 0)), 10);
-                }
-                this.flashScreen();
-
-                const ch = document.getElementById('crosshair');
-                ch.classList.add('crosshair-active');
-                setTimeout(() => ch.classList.remove('crosshair-active'), 100);
-
-                this.enemy.hp -= CONFIG.punchDamage;
-                document.getElementById('enemy-hp').style.width = this.enemy.hp + '%';
-
-                if(this.enemy.animations['hit']) {
-                    const hitAnim = this.enemy.animations['hit'];
-                    if(hitAnim) hitAnim.reset().setLoop(THREE.LoopOnce).play();
-                }
-
-                if(this.enemy.hp <= 0) {
-                    this.endGame(true);
-                }
-            }
-
-            damagePlayer() {
-                this.player.hp -= CONFIG.enemyDamage;
-                document.getElementById('player-hp').style.width = this.player.hp + '%';
-                
-                const overlay = document.getElementById('damage-overlay');
-                overlay.style.opacity = 1;
-                setTimeout(() => overlay.style.opacity = 0, 500);
-                
-                this.cameraShake(0.5);
-
-                if(this.player.hp <= 0) {
-                    this.endGame(false);
-                }
-            }
-
-            // --- AI SYSTEM ---
-            updateAI(dt) {
-                if(!this.enemy.model || this.enemy.hp <= 0) return;
-
-                const dist = this.camera.position.distanceTo(this.enemy.model.position);
-                this.enemy.model.lookAt(this.camera.position.x, this.enemy.model.position.y, this.camera.position.z);
-
-                if (dist > 2.0) {
-                    const speed = 2.0 * dt;
-                    this.enemy.model.translateZ(speed);
-                } else {
-                    if(Math.random() < 0.02) { 
-                         if(this.enemy.animations['attack']) {
-                             const att = this.enemy.animations['attack'];
-                             if(att && !att.isRunning()) att.reset().setLoop(THREE.LoopOnce).play();
-                         }
-                         setTimeout(() => {
-                             if(this.camera.position.distanceTo(this.enemy.model.position) < 2.5) {
-                                 this.damagePlayer();
-                             }
-                         }, 500); 
-                    }
-                }
-            }
-
-            // --- EFFECTS & PHYSICS ---
-            spawnParticles(pos, count) {
-                const geo = new THREE.BoxGeometry(0.05, 0.05, 0.05);
-                const mat = new THREE.MeshBasicMaterial({ color: 0x00d2ff });
-
-                for(let i=0; i<count; i++) {
-                    const mesh = new THREE.Mesh(geo, mat);
-                    mesh.position.copy(pos);
-                    mesh.position.x += (Math.random() - 0.5);
-                    mesh.position.y += (Math.random() - 0.5);
-                    this.scene.add(mesh);
-                    
-                    this.particles.push({
-                        mesh: mesh,
-                        vel: new THREE.Vector3((Math.random()-0.5)*0.2, Math.random()*0.2, (Math.random()-0.5)*0.2),
-                        life: 1.0
-                    });
-                }
-            }
-
-            updateParticles() {
-                for (let i = this.particles.length - 1; i >= 0; i--) {
-                    const p = this.particles[i];
-                    p.life -= 0.02;
-                    p.vel.y -= 0.01;
-                    p.mesh.position.add(p.vel);
-                    if(p.life <= 0) {
-                        this.scene.remove(p.mesh);
-                        this.particles.splice(i, 1);
-                    }
-                }
-            }
-
-            cameraShake(intensity) {
-                const originalY = 1.75;
-                let shakes = 0;
-                const interval = setInterval(() => {
-                    this.camera.position.y = originalY + (Math.random() - 0.5) * intensity;
-                    this.camera.rotation.z = (Math.random() - 0.5) * (intensity * 0.5);
-                    shakes++;
-                    if(shakes > 5) {
-                        clearInterval(interval);
-                        this.camera.position.y = originalY;
-                        this.camera.rotation.z = 0;
-                    }
-                }, 20);
-            }
-            
-            flashScreen() {
-                const f = document.getElementById('flash-overlay');
-                f.style.opacity = 0.3;
-                setTimeout(() => f.style.opacity = 0, 100);
-            }
-
-            movePlayer(dt) {
-                if(!this.controls.isLocked) return;
-                
-                const speed = CONFIG.playerSpeed * dt;
-                if(this.keys.w) this.controls.moveForward(speed);
-                if(this.keys.s) this.controls.moveForward(-speed);
-                if(this.keys.a) this.controls.moveRight(-speed);
-                if(this.keys.d) this.controls.moveRight(speed);
-                
-                if(this.gloves && (this.keys.w || this.keys.a || this.keys.s || this.keys.d)) {
-                    const time = Date.now() * 0.01;
-                    this.gloves.position.y = -0.4 + Math.sin(time) * 0.02;
-                }
-            }
-
-            endGame(win) {
-                document.exitPointerLock();
-                const h1 = document.querySelector('h1');
-                h1.innerText = win ? "KNOCKOUT!" : "YOU DIED";
-                h1.style.color = win ? "#00d2ff" : "#ff416c";
-                h1.style.textShadow = "0 0 20px currentColor";
-                
-                document.querySelector('h2').innerText = win ? "NEW CHAMPION" : "TRY AGAIN";
-                document.getElementById('start-btn').innerText = "RESTART";
-                document.getElementById('start-btn').onclick = () => location.reload();
-                document.getElementById('start-screen').style.display = 'flex';
-            }
-
-            onResize() {
-                this.camera.aspect = window.innerWidth / window.innerHeight;
-                this.camera.updateProjectionMatrix();
-                this.renderer.setSize(window.innerWidth, window.innerHeight);
-                this.composer.setSize(window.innerWidth, window.innerHeight);
-            }
-
-            animate() {
-                requestAnimationFrame(() => this.animate());
-                
-                const dt = this.clock.getDelta();
-                
-                this.movePlayer(dt);
-                this.updateAI(dt);
-                this.updateParticles();
-
-                this.mixers.forEach(mixer => mixer.update(dt));
-                this.composer.render();
-            }
+        function updateStatus(id, msg, color) {
+            const el = document.getElementById(id);
+            el.innerHTML = msg;
+            el.style.color = color;
         }
 
-        window.onload = () => {
-            const game = new GameEngine();
-        };
+        // A) RING YÜKLE
+        loader.load('./Boxing Ring.glb', (gltf) => {
+            scene.remove(backupFloor); // Yedek zemini sil
+            const ring = gltf.scene;
+            ring.position.set(0, 0, 0); 
+            scene.add(ring);
+            updateStatus('status-ring', 'Ring YÜKLENDİ!', '#0f0');
+        }, undefined, (err) => {
+            updateStatus('status-ring', 'Ring YÜKLENEMEDİ (Yedek Devrede)', 'red');
+            console.error(err);
+        });
+
+        // B) DÜŞMAN (Male Fighter) YÜKLE
+        loader.load('./Male Fighter.glb', (gltf) => {
+            scene.remove(enemyContainer); // Kırmızı kutuyu sil
+            const enemy = gltf.scene;
+            enemy.position.set(0, 0, -3);
+            scene.add(enemy);
+            enemyContainer = enemy; // Artık düşmanımız bu model
+            
+            // Animasyon
+            mixer = new THREE.AnimationMixer(enemy);
+            if(gltf.animations.length > 0) {
+                mixer.clipAction(gltf.animations[0]).play();
+            }
+
+            updateStatus('status-enemy', 'Fighter YÜKLENDİ!', '#0f0');
+        }, undefined, (err) => {
+            updateStatus('status-enemy', 'Fighter BULUNAMADI (Kırmızı Kutu Devrede)', 'red');
+        });
+
+        // C) ELDİVEN (Boxing Gloves) YÜKLE
+        loader.load('./Boxing Gloves.glb', (gltf) => {
+            camera.remove(gloveContainer); // Mavi kutuyu sil
+            const gloves = gltf.scene;
+            gloves.scale.set(0.1, 0.1, 0.1); // Boyut ayarı (gerekirse değiştir)
+            gloves.position.set(0.4, -0.4, -0.5);
+            gloves.rotation.set(0, Math.PI, 0); // Bize dönük
+            
+            gloveContainer = gloves;
+            camera.add(gloves);
+            updateStatus('status-gloves', 'Eldiven YÜKLENDİ!', '#0f0');
+        }, undefined, (err) => {
+            updateStatus('status-gloves', 'Eldiven BULUNAMADI (Mavi Kutu Devrede)', 'red');
+        });
+
+        // --- KONTROLLER VE OYUN DÖNGÜSÜ ---
+        const controls = new PointerLockControls(camera, document.body);
+        
+        document.body.addEventListener('click', () => {
+            controls.lock();
+            // Vuruş efekti (Basit ileri git gel)
+            if(gloveContainer) {
+                gloveContainer.position.z -= 0.5;
+                setTimeout(() => gloveContainer.position.z += 0.5, 100);
+            }
+        });
+
+        // Klavye
+        const keys = { w:false, a:false, s:false, d:false };
+        document.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+        document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+
+            // Hareket
+            if(controls.isLocked) {
+                const speed = 5 * delta;
+                if(keys.w) controls.moveForward(speed);
+                if(keys.s) controls.moveForward(-speed);
+                if(keys.a) controls.moveRight(-speed);
+                if(keys.d) controls.moveRight(speed);
+            }
+
+            // Animasyon güncelle
+            if(mixer) mixer.update(delta);
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Ekran boyutu değişirse
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>
