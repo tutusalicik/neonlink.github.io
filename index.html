@@ -2,115 +2,184 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>PROJECT: OUTLAST PROTOCOL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROJECT: ECHO [ULTIMATE]</title>
     <style>
-        /* --- CAMCORDER LENS EFEKTİ & GENEL STİL --- */
-        body { 
-            margin: 0; overflow: hidden; background: #020202; 
-            font-family: 'Courier New', Courier, monospace; /* Dijital kamera fontu */
+        /* --- CSS (GÖRSEL MOTOR) --- */
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --hud-color: #0f0;
+            --bg-color: #000;
+            --alert-color: #f00;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Share Tech Mono', monospace;
             user-select: none;
-            /* Tüm ekrana eski kamera filtresi uygula */
-            filter: contrast(1.1) sepia(0.2) saturate(0.9);
+        }
+
+        /* VHS / BODYCAM EFEKTLERİ */
+        #noise {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 10; opacity: 0.15;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
         
-        /* --- SİNEMATİK KATMANLAR --- */
-        #vignette {
+        #overlay-glitch {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(0,0,0,0) 40%, rgba(0,0,0,0.9) 100%);
-            pointer-events: none; z-index: 5; mix-blend-mode: multiply;
+            background: radial-gradient(circle, rgba(0,20,0,0) 50%, rgba(0,0,0,1) 120%);
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+            z-index: 11; pointer-events: none;
         }
-        /* Scanlines (Tarama Çizgileri) Efekti */
-        #scanlines {
+
+        #rec-ui {
+            position: absolute; top: 20px; left: 30px;
+            color: var(--hud-color); font-size: 24px;
+            z-index: 20; display: flex; align-items: center; gap: 15px;
+            text-shadow: 0 0 5px var(--hud-color);
+        }
+
+        .blink { animation: blinker 1.5s linear infinite; color: red; }
+        @keyframes blinker { 50% { opacity: 0; } }
+
+        /* HUD ELEMANLARI */
+        #stamina-container {
+            position: absolute; bottom: 30px; left: 30px;
+            width: 200px; height: 10px; border: 1px solid #333;
+            background: rgba(0,0,0,0.5); z-index: 20;
+        }
+        #stamina-bar { width: 100%; height: 100%; background: var(--hud-color); transition: width 0.1s; }
+
+        #battery-container {
+            position: absolute; top: 20px; right: 30px;
+            text-align: right; color: var(--hud-color); z-index: 20;
+        }
+
+        #interaction-text {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, 50px);
+            color: #fff; font-size: 18px; text-shadow: 0 0 5px #fff;
+            display: none; z-index: 20;
+        }
+
+        #crosshair {
+            position: absolute; top: 50%; left: 50%;
+            width: 6px; height: 6px; background: rgba(255,255,255,0.5);
+            border-radius: 50%; transform: translate(-50%, -50%);
+            z-index: 15;
+        }
+
+        /* NOT VE BELGE OKUMA EKRANI */
+        #note-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(0,0,0,0.1) 3px);
-            pointer-events: none; z-index: 6;
+            background: rgba(0,0,0,0.9); display: none;
+            justify-content: center; align-items: center; z-index: 100;
         }
-        #blood-overlay {
+        #note-content {
+            width: 500px; padding: 40px; background: #fff; color: #000;
+            font-family: 'Courier Prime', monospace; transform: rotate(-1deg);
+            box-shadow: 0 0 50px rgba(255,255,255,0.1);
+        }
+
+        /* MENÜLER */
+        #login-screen, #game-over-screen, #win-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circleAt center, transparent 50%, rgba(180, 0, 0, 0.6) 100%);
-            opacity: 0; transition: opacity 0.3s; z-index: 7; pointer-events: none;
+            background: #000; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 200;
         }
+        
+        h1 { color: var(--hud-color); font-size: 4rem; margin: 0; letter-spacing: 5px; text-transform: uppercase; }
+        p { color: #888; max-width: 600px; text-align: center; }
+        
+        input {
+            background: transparent; border: 2px solid var(--hud-color);
+            color: var(--hud-color); padding: 15px; font-size: 1.5rem;
+            font-family: 'Share Tech Mono', monospace; text-align: center;
+            margin: 20px 0; outline: none; width: 300px;
+        }
+        input:focus { box-shadow: 0 0 20px var(--hud-color); }
 
-        /* --- CAMCORDER UI (REC) --- */
-        #camcorder-ui {
-            position: absolute; top: 20px; left: 30px; color: #ff3333;
-            font-size: 20px; font-weight: bold; z-index: 20; display: flex; align-items: center;
-            text-shadow: 0 0 5px #ff0000;
+        button {
+            background: var(--hud-color); color: #000; border: none;
+            padding: 15px 40px; font-size: 1.2rem; font-weight: bold;
+            font-family: 'Share Tech Mono', monospace; cursor: pointer;
+            transition: 0.3s;
         }
-        .blink-dot {
-            width: 15px; height: 15px; background: #ff3333; border-radius: 50%;
-            margin-right: 10px; animation: blink 1s infinite;
-        }
-        @keyframes blink { 50% { opacity: 0; } }
-        #time-code {
-            position: absolute; top: 20px; right: 30px; color: #fff;
-            font-size: 20px; font-family: monospace; z-index: 20; text-shadow: 1px 1px 2px #000;
-        }
+        button:hover { background: #fff; box-shadow: 0 0 20px #fff; }
 
-        /* --- OYUN İÇİ UI --- */
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 15; }
+        .hidden { display: none !important; }
 
-        /* Altyazı (Outlast Tarzı) */
-        #subtitle-box {
-            position: absolute; bottom: 15%; width: 100%; text-align: center;
+        #terminal-log {
+            position: absolute; bottom: 10px; left: 10px;
+            color: #333; font-size: 12px; pointer-events: none;
         }
-        #subtitle-text {
-            display: inline-block; background: rgba(0, 0, 0, 0.8); color: #fff;
-            padding: 12px 24px; font-size: 22px; font-style: italic; font-family: 'Segoe UI', Tahoma, sans-serif;
-            border-left: 4px solid #ff3333; opacity: 0; transition: opacity 0.8s;
-            max-width: 60%; line-height: 1.4; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        }
-
-        /* Mermi */
-        #weapon-hud {
-            position: absolute; bottom: 30px; right: 40px; text-align: right; color: #fff;
-        }
-        #ammo-count { font-size: 70px; font-weight: 900; color: #ff3333; font-family: Impact, sans-serif; }
-
-        /* Etkileşim */
-        #interaction {
-            position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%);
-            color: #fff; background: rgba(50,0,0,0.8); padding: 10px 20px; 
-            border: 1px solid #ff3333; font-size: 16px; display: none;
-        }
-
-        /* Menü */
-        #blocker {
-            position: absolute; width: 100%; height: 100%; background: #080808; color: #ccc;
-            display: flex; justify-content: center; align-items: center; flex-direction: column; z-index: 999;
-        }
-        #start-btn {
-            font-size: 30px; color: #ff3333; border: 2px solid #ff3333; padding: 15px 40px; 
-            cursor: pointer; letter-spacing: 5px; transition: 0.3s;
-        }
-        #start-btn:hover { background: #ff3333; color: #000; }
-
     </style>
 </head>
 <body>
 
-    <div id="vignette"></div>
-    <div id="scanlines"></div>
-    <div id="blood-overlay"></div>
+    <div id="noise"></div>
+    <div id="overlay-glitch"></div>
 
-    <div id="camcorder-ui"><div class="blink-dot"></div>REC</div>
-    <div id="time-code">00:00:00:00</div>
-
-    <div id="blocker">
-        <h1 style="color:#ff3333; letter-spacing: 10px; margin-bottom: 40px;">OUTLAST PROTOCOL</h1>
-        <div id="start-btn">KAYDI BAŞLAT</div>
-        <p style="margin-top:20px;">(W,A,S,D Hareket | SHIFT Koş | SOL TIK Ateş | SAĞ TIK Zoom | E Kullan)</p>
+    <div id="rec-ui" class="hidden">
+        <span class="blink">● REC</span>
+        <span id="timer">00:00:00:00</span>
+        <span style="font-size:14px; margin-left:20px; border:1px solid #0f0; padding:2px 5px;" id="nametag-ui">CAM-1</span>
     </div>
 
-    <div id="ui-layer">
-        <div style="position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: rgba(255,255,255,0.5); transform: translate(-50%,-50%); border-radius: 50%;"></div>
-        <div id="subtitle-box"><div id="subtitle-text"></div></div>
-        <div id="interaction">[E] KAPIYI İNCELE</div>
-        <div id="weapon-hud"><div id="ammo-count">15</div>PROTOTYPE</div>
+    <div id="battery-container" class="hidden">
+        <div style="font-size: 24px;" id="battery-level">BAT: 100%</div>
+        <div style="font-size: 12px;">IR MODE: ACTIVE</div>
+    </div>
+
+    <div id="stamina-container" class="hidden">
+        <div id="stamina-bar"></div>
+    </div>
+
+    <div id="crosshair" class="hidden"></div>
+    <div id="interaction-text">İNCELEMEK İÇİN [E]</div>
+
+    <div id="login-screen">
+        <h1 style="text-shadow: 0 0 10px red; color:white;">PROJECT: ECHO</h1>
+        <p>BİLİNMEYEN SİNYAL TESPİT EDİLDİ. GÜVENLİ BAĞLANTI İÇİN DAVET KODU GEREKLİDİR.</p>
+        <br>
+        <input type="text" id="code-input" placeholder="DAVET KODU" autocomplete="off">
+        <input type="text" id="name-input" placeholder="AJAN ADI" maxlength="10" autocomplete="off">
+        <button onclick="Game.init()">SİSTEME GİRİŞ</button>
+        <div id="terminal-log">v2.0.4.5 - BUILD 9928</div>
+    </div>
+
+    <div id="note-overlay">
+        <div id="note-content">
+            <h2 id="note-title">BAŞLIK</h2>
+            <p id="note-body">İçerik...</p>
+            <br>
+            <small style="color:red;">[KAPATMAK İÇİN 'E' VEYA 'ESC']</small>
+        </div>
+    </div>
+
+    <div id="game-over-screen" class="hidden">
+        <h1 style="color:red;">BAĞLANTI KOPTU</h1>
+        <p>OPERATÖRÜN HAYATİ FONKSİYONLARI DURDU.</p>
+        <button onclick="location.reload()">YENİDEN BAĞLAN</button>
+    </div>
+
+    <div id="win-screen" class="hidden">
+        <h1 style="color:#0f0;">ÇIKIŞ BAŞARILI</h1>
+        <p>VERİLER BULUTA YÜKLENDİ. TEBRİKLER AJAN.</p>
+        <button onclick="location.reload()">YENİ GÖREV</button>
     </div>
 
     <script type="importmap">
-        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
     </script>
 
     <script type="module">
@@ -118,240 +187,494 @@
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+        // ==========================================
+        // 1. SES MOTORU (AUDIO ENGINE)
+        // ==========================================
+        class AudioEngine {
+            constructor() {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = 0.5;
+                this.masterGain.connect(this.ctx.destination);
+            }
+
+            playTone(freq, type, duration, vol = 0.1) {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            }
+
+            playAmbient() {
+                // Korkunç arka plan uğultusu
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(50, this.ctx.currentTime); // Düşük frekans
+                // LFO ile dalgalanma
+                const lfo = this.ctx.createOscillator();
+                lfo.frequency.value = 0.2;
+                const lfoGain = this.ctx.createGain();
+                lfoGain.gain.value = 300; 
+                lfo.connect(lfoGain);
+                lfoGain.connect(osc.frequency);
+                
+                gain.gain.value = 0.05;
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                lfo.start();
+                osc.start();
+            }
+
+            playStep() {
+                // Rastgele pitch ile ayak sesi simülasyonu
+                const freq = 100 + Math.random() * 50;
+                this.playTone(freq, 'square', 0.1, 0.2);
+            }
+
+            playJumpscare() {
+                // Ani yüksek ses
+                this.playTone(800, 'sawtooth', 0.5, 0.8);
+                this.playTone(120, 'square', 1.0, 0.8);
+            }
+        }
+
+        // ==========================================
+        // 2. OYUN YÖNETİCİSİ (GAME MANAGER)
+        // ==========================================
         const CONFIG = {
-            walkSpeed: 5.0, runSpeed: 11.0, weaponSway: 0.06, recoilForce: 0.12,
-            zombieHP: 5, zombieSpeed: 7.0
+            INVITE_CODE: "ZOMBIE",
+            WALK_SPEED: 8,
+            RUN_SPEED: 14,
+            BATTERY_DRAIN: 0.02, // Saniyede giden pil
         };
 
-        let camera, scene, renderer, controls;
-        let moveF=false, moveB=false, moveL=false, moveR=false, isSprint=false;
-        let prevTime = performance.now();
-        let velocity = new THREE.Vector3();
-        
-        let hasKey = false;
-        let doorOpen = false;
-        let canShoot = true;
-        let isAiming = false;
-        let ammo = 15;
-        let startTime = Date.now();
-
-        let weaponContainer = new THREE.Group();
-        let muzzleLight, doorGroup = new THREE.Group(), keyModel, zombie = {mesh:null, hp:5, state:'IDLE'};
-        let redAlarmLight; // Titreyen kırmızı ışık
-
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const uiSub = document.getElementById('subtitle-text');
-        const timeCodeEl = document.getElementById('time-code');
-
-        init(); animate();
-
-        function init() {
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x020202);
-            // Daha az yoğun, daha ürkütücü sis
-            scene.fog = new THREE.FogExp2(0x020202, 0.025);
-
-            camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 1000);
-            camera.position.y = 1.7;
-
-            // --- AYDINLATMA (OUTLAST STİLİ) ---
-            // 1. Ortam Işığı (Artırıldı, artık zifiri karanlık değil)
-            const ambient = new THREE.AmbientLight(0x333344, 0.4); 
-            scene.add(ambient);
+        const Game = {
+            active: false,
+            audio: null,
+            scene: null,
+            camera: null,
+            renderer: null,
+            controls: null,
+            player: {
+                height: 1.8,
+                stamina: 100,
+                battery: 100,
+                isRunning: false,
+                keysFound: 0
+            },
+            objects: [], // Etkileşime geçilebilir objeler
+            walls: [],   // Çarpışma kutuları
+            enemy: null, // Zombi referansı
             
-            // 2. Oyuncu Kamera Işığı (Soğuk LED Panel Hissi)
-            const flash = new THREE.SpotLight(0xaaccff, 6, 60, Math.PI/4.5, 0.4, 1);
-            flash.position.set(0,0,0); flash.target.position.set(0,0,-1);
-            flash.castShadow = true;
-            camera.add(flash); camera.add(flash.target);
-
-            // 3. Çevresel Titreyen Kırmızı Işık (Atmosfer için)
-            redAlarmLight = new THREE.PointLight(0xff0000, 2, 20);
-            redAlarmLight.position.set(0, 4, -15); // Kapının oralarda
-            scene.add(redAlarmLight);
-
-            camera.add(weaponContainer);
-            weaponContainer.position.set(0.25, -0.3, -0.5);
-            scene.add(camera);
-
-            createLevel();
-            createProceduralGun();
-            setupMuzzleFlash();
-
-            const loader = new GLTFLoader();
-            // GLB Yüklemeleri (Dosya varsa kullanır, yoksa procedural kalır)
-            loader.load(encodeURI('./Rigged Glock 19.glb'), (g)=>{
-                while(weaponContainer.children.length>1) weaponContainer.remove(weaponContainer.children[0]);
-                g.scene.scale.set(50,50,50); g.scene.rotation.y=Math.PI;
-                weaponContainer.add(g.scene); setupMuzzleFlash();
-            }, undefined, ()=>{}); // Hata olursa sessizce devam et (Procedural silah zaten var)
-
-            loader.load('./Door.glb', (g)=>{doorGroup.add(g.scene);}, undefined, ()=>createFallbackDoor());
-            loader.load('./Zombie.glb', (g)=>{zombie.mesh=g.scene; setupZombie();}, undefined, ()=>createFallbackZombie());
-            loader.load('./Skeleton Key.glb', (g)=>{keyModel=g.scene; setupKey();}, undefined, ()=>createFallbackKey());
-
-            controls = new PointerLockControls(camera, document.body);
-            document.getElementById('start-btn').addEventListener('click', ()=>{
-                controls.lock(); if(audioCtx.state==='suspended') audioCtx.resume();
-            });
-            controls.addEventListener('lock', ()=>{
-                document.getElementById('blocker').style.display='none';
-                startTime = Date.now();
-                // HİKAYE BAŞLANGICI (İç Monolog)
-                triggerSubtitle("(Nefes nefese) Tanrım... Başım çatlıyor. Neresi burası? Lanet olası kamera hala kayıtta mı?", 5000);
-                setTimeout(() => triggerSubtitle("Hava buz gibi... ve içerisi leş gibi kokuyor. Bir çıkış yolu bulmalıyım.", 4000), 6000);
-            });
-            controls.addEventListener('unlock', ()=>{document.getElementById('blocker').style.display='flex';});
-
-            document.addEventListener('keydown', onKeyDown); document.addEventListener('keyup', onKeyUp);
-            document.addEventListener('mousedown', onMouseDown); document.addEventListener('mouseup', onMouseUp);
-
-            renderer = new THREE.WebGLRenderer({antialias: true});
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true;
-            document.body.appendChild(renderer.domElement);
-            window.addEventListener('resize', onWindowResize);
-        }
-
-        // --- PROSEDÜREL DÜNYA ---
-        function createLevel() {
-            // Daha kirli, betonumsu duvar dokusu
-            const canvas = document.createElement('canvas'); canvas.width=512; canvas.height=512; const ctx=canvas.getContext('2d');
-            ctx.fillStyle='#1a1a1a'; ctx.fillRect(0,0,512,512);
-            for(let i=0; i<5000; i++) { ctx.fillStyle = Math.random()>0.5?'#222':'#111'; ctx.fillRect(Math.random()*512, Math.random()*512, 2, 2); }
-            // Duvarlara kan sıçraması
-            for(let i=0;i<5;i++){ctx.fillStyle='rgba(100,0,0,0.4)'; ctx.beginPath(); ctx.arc(Math.random()*512, Math.random()*512, Math.random()*50+20,0,Math.PI*2); ctx.fill();}
-            
-            const tex = new THREE.CanvasTexture(canvas); tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(5,5);
-            const mat = new THREE.MeshStandardMaterial({map:tex, roughness:0.9, bumpMap:tex, bumpScale:0.02});
-
-            const floor = new THREE.Mesh(new THREE.PlaneGeometry(30,60), mat); floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
-            const ceil = new THREE.Mesh(new THREE.PlaneGeometry(30,60), mat); ceil.rotation.x=Math.PI/2; ceil.position.y=8; scene.add(ceil);
-
-            const createWall=(x,y,z,w,h,d)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true; scene.add(m);}
-            createWall(-8, 4, 0, 1, 8, 60); createWall(8, 4, 0, 1, 8, 60); createWall(0, 4, 30, 16, 8, 1);
-            
-            const doorZ = -20;
-            createWall(-5, 4, doorZ, 7, 8, 1); createWall(5, 4, doorZ, 7, 8, 1); createWall(0, 7, doorZ, 3, 2, 1);
-            doorGroup.position.set(0,0,doorZ); scene.add(doorGroup);
-        }
-
-        function createProceduralGun() {
-            const matBody = new THREE.MeshStandardMaterial({color:0x222222, roughness:0.3});
-            const root=new THREE.Group();
-            const body=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.1,0.4),matBody);
-            const barrel=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.42),matBody); barrel.rotation.x=Math.PI/2; barrel.position.y=0.03;
-            root.add(body,barrel); weaponContainer.add(root);
-        }
-        function setupMuzzleFlash() { muzzleLight=new THREE.PointLight(0xffaa00,0,8); muzzleLight.position.set(0,0.1,-0.5); weaponContainer.add(muzzleLight); }
-        function createFallbackDoor(){const d=new THREE.Mesh(new THREE.BoxGeometry(3,6,0.2),new THREE.MeshStandardMaterial({color:0x333})); d.position.y=3; doorGroup.add(d);}
-        function setupZombie(){zombie.mesh.position.set(0,0,-26); zombie.mesh.rotation.y=Math.PI; scene.add(zombie.mesh);}
-        function createFallbackZombie(){zombie.mesh=new THREE.Mesh(new THREE.CapsuleGeometry(0.6,1.8),new THREE.MeshStandardMaterial({color:0x550000})); setupZombie();}
-        function setupKey(){keyModel.position.set(6,0.5,15); keyModel.scale.set(0.5,0.5,0.5); scene.add(keyModel); const l=new THREE.PointLight(0xff0000,1,2); keyModel.add(l);}
-        function createFallbackKey(){keyModel=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3),new THREE.MeshBasicMaterial({color:0xff0000})); setupKey();}
-
-        function onKeyDown(e){switch(e.code){case 'KeyW':moveF=true;break;case 'KeyA':moveL=true;break;case 'KeyS':moveB=true;break;case 'KeyD':moveR=true;break;case 'ShiftLeft':isSprint=true;break;case 'KeyE':interact();break;}}
-        function onKeyUp(e){switch(e.code){case 'KeyW':moveF=false;break;case 'KeyA':moveL=false;break;case 'KeyS':moveB=false;break;case 'KeyD':moveR=false;break;case 'ShiftLeft':isSprint=false;break;}}
-        function onMouseDown(e){if(!controls.isLocked)return; if(e.button===0)fireWeapon(); if(e.button===2)isAiming=true;}
-        function onMouseUp(e){if(e.button===2)isAiming=false;}
-
-        function interact() {
-            if(!hasKey && keyModel && camera.position.distanceTo(keyModel.position)<3) {
-                hasKey=true; keyModel.visible=false;
-                playSound('PICKUP');
-                triggerSubtitle("Bu... bir morg anahtarı. Tanrım, burada ne haltlar dönüyor?", 4000);
-                return;
-            }
-            if(hasKey && !doorOpen && camera.position.distanceTo(doorGroup.position)<5) {
-                doorOpen=true; playSound('DOOR');
-                triggerSubtitle("(Korkuyla fısıldar) Kapının arkasında... bir şey nefes alıyor...", 4000);
-                setTimeout(()=>{zombie.state='CHASE'; playSound('SCREAM');}, 1500);
-            } else if (!hasKey && camera.position.distanceTo(doorGroup.position)<5) {
-                 triggerSubtitle("Kilitli. Lanet olsun, açılmıyor! Anahtarı bulmalıyım.", 3000);
-            }
-        }
-
-        function fireWeapon() {
-            if(!canShoot||ammo<=0){if(ammo<=0)triggerSubtitle("Şarjör boş! Olamaz!",2000); return;}
-            canShoot=false; ammo--; document.getElementById('ammo-count').innerText=ammo;
-            playSound('SHOOT');
-            if(muzzleLight){muzzleLight.intensity=8; setTimeout(()=>muzzleLight.intensity=0,50);}
-            camera.rotation.x+=CONFIG.recoilForce; weaponContainer.position.z+=0.15; weaponContainer.rotation.x+=0.1;
-            
-            const ray=new THREE.Raycaster(); ray.setFromCamera(new THREE.Vector2(0,0),camera);
-            if(zombie.state!=='DEAD' && zombie.mesh){
-                if(ray.intersectObject(zombie.mesh,true).length>0) hitZombie();
-            }
-            setTimeout(()=>canShoot=true, 120);
-        }
-
-        function hitZombie() {
-            zombie.hp--; playSound('HIT'); zombie.mesh.position.z-=0.4;
-            if(zombie.hp<=0){
-                zombie.state='DEAD'; zombie.mesh.rotation.x=-Math.PI/2; zombie.mesh.position.y=0.5;
-                triggerSubtitle("(Titreyerek) Öldü mü? Hareket etmiyor... Kaydı durdurmalı mıyım?", 5000);
-            }
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            const time = performance.now();
-            const delta = (time - lastTime) / 1000;
-            lastTime = time;
-
-            // Time Code Güncelleme
-            const elapsed = Date.now() - startTime;
-            const ms = Math.floor((elapsed % 1000) / 10);
-            const s = Math.floor((elapsed / 1000) % 60);
-            const m = Math.floor((elapsed / (1000 * 60)) % 60);
-            timeCodeEl.innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}:${ms.toString().padStart(2,'0')}`;
-
-            // Kırmızı Alarm Işığı Titremesi
-            if(redAlarmLight) redAlarmLight.intensity = 1 + Math.sin(time * 0.01) * Math.random() * 3;
-
-            if(controls.isLocked) {
-                const speed = isSprint ? CONFIG.runSpeed : CONFIG.walkSpeed;
-                velocity.x -= velocity.x*10.0*delta; velocity.z -= velocity.z*10.0*delta;
-                direction.z = Number(moveF)-Number(moveB); direction.x = Number(moveR)-Number(moveL); direction.normalize();
-                if(moveF||moveB) velocity.z -= direction.z*speed*delta;
-                if(moveL||moveR) velocity.x -= direction.x*speed*delta;
-                controls.moveRight(-velocity.x*delta); controls.moveForward(-velocity.z*delta);
-
-                const isMoving = moveF||moveB||moveL||moveR;
-                const targetPos = isAiming ? new THREE.Vector3(0,-0.21,-0.4) : new THREE.Vector3(0.25,-0.3,-0.5);
-                if(isMoving){ targetPos.y+=Math.sin(time*0.01)*0.003; targetPos.x+=Math.cos(time*0.005)*0.003; }
-                weaponContainer.position.lerp(targetPos, 10*delta);
-                if(camera.rotation.x>0) camera.rotation.x -= 1*delta;
-
-                if(doorOpen && doorGroup.rotation.y > -Math.PI/1.5) doorGroup.rotation.y -= 1.5*delta;
-
-                if(zombie.state==='CHASE' && zombie.mesh){
-                    zombie.mesh.lookAt(camera.position.x,0,camera.position.z);
-                    zombie.mesh.position.add(new THREE.Vector3().subVectors(camera.position,zombie.mesh.position).normalize().multiplyScalar(CONFIG.zombieSpeed*delta));
-                    if(camera.position.distanceTo(zombie.mesh.position)<1.5){
-                        document.getElementById('blood-overlay').style.opacity=1; setTimeout(()=>document.getElementById('blood-overlay').style.opacity=0,800);
-                        playSound('SCREAM');
-                        velocity.add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(-15)); // Geri itilme
-                    }
+            init: function() {
+                const code = document.getElementById('code-input').value.toUpperCase();
+                const name = document.getElementById('name-input').value;
+                
+                if (code !== CONFIG.INVITE_CODE) {
+                    alert("ERİŞİM REDDEDİLDİ: GEÇERSİZ PROTOKOL KODU");
+                    return;
                 }
 
-                const ray=new THREE.Raycaster(); ray.setFromCamera(new THREE.Vector2(),camera);
-                const hitsD=ray.intersectObjects([doorGroup],true); const hitsK=keyModel?ray.intersectObject(keyModel):[];
-                const showP=(hitsD.length>0 && hitsD[0].distance<5 && !doorOpen) || (hitsK.length>0 && hitsK[0].distance<3 && !hasKey);
-                document.getElementById('interaction').style.display = showP?'block':'none';
-            }
-            renderer.render(scene, camera);
-        }
+                document.getElementById('nametag-ui').innerText = "OP: " + (name || "UNKNOWN");
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('rec-ui').classList.remove('hidden');
+                document.getElementById('battery-container').classList.remove('hidden');
+                document.getElementById('stamina-container').classList.remove('hidden');
+                document.getElementById('crosshair').classList.remove('hidden');
 
-        function playSound(t) {
-            const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); const ct=audioCtx.currentTime;
-            if(t==='SHOOT'){o.type='sawtooth';o.frequency.setValueAtTime(120,ct);g.gain.exponentialRampToValueAtTime(0.01,ct+0.2);o.start();o.stop(ct+0.2);}
-            else if(t==='DOOR'){o.type='square';o.frequency.setValueAtTime(50,ct);g.gain.linearRampToValueAtTime(0,ct+1.5);o.start();o.stop(ct+1.5);}
-            else if(t==='SCREAM'){o.type='sawtooth';o.frequency.linearRampToValueAtTime(600,ct+0.5);g.gain.linearRampToValueAtTime(0,ct+0.8);o.start();o.stop(ct+0.8);}
-            else if(t==='PICKUP'){o.type='sine';o.frequency.linearRampToValueAtTime(800,ct+0.2);g.gain.linearRampToValueAtTime(0,ct+0.2);o.start();o.stop(ct+0.2);}
-        }
-        function triggerSubtitle(txt,dur){uiSub.innerText=txt; uiSub.style.opacity=1; setTimeout(()=>uiSub.style.opacity=0,dur);}
-        function onWindowResize(){camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight);}
+                this.audio = new AudioEngine();
+                this.audio.ctx.resume(); // Tarayıcı izni için
+                this.audio.playAmbient();
+
+                this.setupThreeJS();
+                this.buildLevel();
+                this.setupInputs();
+                
+                this.active = true;
+                this.gameLoop();
+            },
+
+            setupThreeJS: function() {
+                this.scene = new THREE.Scene();
+                this.scene.fog = new THREE.FogExp2(0x000000, 0.08);
+
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 100);
+                
+                // Night Vision Işığı (Fener)
+                this.flashlight = new THREE.SpotLight(0x00ff00, 100, 30, 0.6, 0.5, 1);
+                this.flashlight.position.set(0,0,0);
+                this.camera.add(this.flashlight);
+                this.scene.add(this.camera);
+
+                this.renderer = new THREE.WebGLRenderer({ antialias: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                document.body.appendChild(this.renderer.domElement);
+
+                this.controls = new PointerLockControls(this.camera, document.body);
+                
+                // Ortam Işığı (Çok karanlık)
+                const ambient = new THREE.AmbientLight(0xffffff, 0.02);
+                this.scene.add(ambient);
+            },
+
+            // ==========================================
+            // 3. HARİTA OLUŞTURUCU (LEVEL GENERATOR)
+            // ==========================================
+            buildLevel: function() {
+                // 1: Duvar, 0: Boş, 2: Kapı, 3: Not, 9: Zombi Spawn
+                const mapData = [
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                    [1,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,1,0,1,0,1,1,1,1,1,1,1,0,1],
+                    [1,0,1,0,0,0,0,0,0,3,0,0,1,0,1],
+                    [1,0,1,1,1,1,1,0,1,1,1,0,1,0,1],
+                    [1,0,0,0,0,9,1,0,1,3,0,0,0,0,1],
+                    [1,1,1,0,1,1,1,0,1,1,1,1,1,0,1],
+                    [1,3,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,1,1,1,1,2,1,1,1,1,1,1,1,1,1]
+                ];
+
+                const UNIT = 5; // Her karenin boyutu
+                const wallGeo = new THREE.BoxGeometry(UNIT, UNIT*1.5, UNIT);
+                const wallMat = new THREE.MeshStandardMaterial({ 
+                    color: 0x111111, roughness: 0.9,
+                    map: new THREE.TextureLoader().load('https://threejs.org/examples/textures/brick_diffuse.jpg') 
+                }); // Placeholder texture
+
+                const floorGeo = new THREE.PlaneGeometry(100, 100);
+                const floorMat = new THREE.MeshStandardMaterial({ color: 0x050505 });
+                const floor = new THREE.Mesh(floorGeo, floorMat);
+                floor.rotation.x = -Math.PI/2;
+                this.scene.add(floor);
+
+                mapData.forEach((row, z) => {
+                    row.forEach((type, x) => {
+                        const posX = (x - 7) * UNIT;
+                        const posZ = (z - 4) * UNIT;
+
+                        if (type === 1) { // DUVAR
+                            const wall = new THREE.Mesh(wallGeo, wallMat);
+                            wall.position.set(posX, UNIT/1.5, posZ);
+                            this.scene.add(wall);
+                            
+                            // Çarpışma kutusu
+                            const box = new THREE.Box3().setFromObject(wall);
+                            this.walls.push(box);
+                        }
+                        else if (type === 2) { // KAPI (Door.glb)
+                            const loader = new GLTFLoader();
+                            loader.load('Door.glb', (gltf) => {
+                                const model = gltf.scene;
+                                model.position.set(posX, 0, posZ);
+                                model.scale.set(2,2,2);
+                                this.scene.add(model);
+                                // Kapı etkileşim verisi
+                                model.userData = { type: 'door', locked: true };
+                                this.objects.push(model);
+                            }, undefined, () => {
+                                // Model yoksa yedek
+                                const d = new THREE.Mesh(new THREE.BoxGeometry(UNIT, UNIT*1.5, 0.5), new THREE.MeshBasicMaterial({color:0x0000aa}));
+                                d.position.set(posX, UNIT/1.5, posZ);
+                                d.userData = { type: 'door', locked: true };
+                                this.scene.add(d);
+                                this.objects.push(d);
+                            });
+                        }
+                        else if (type === 3) { // NOT (Lore)
+                            const noteGeo = new THREE.PlaneGeometry(0.5, 0.7);
+                            const noteMat = new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.DoubleSide});
+                            const note = new THREE.Mesh(noteGeo, noteMat);
+                            note.rotation.x = -Math.PI/2;
+                            note.position.set(posX, 0.1, posZ);
+                            note.userData = { type: 'note', id: Math.floor(Math.random()*3) };
+                            this.scene.add(note);
+                            this.objects.push(note);
+                        }
+                        else if (type === 9) { // ZOMBIE SPAWN
+                           this.spawnEnemy(posX, posZ);
+                        }
+                    });
+                });
+            },
+
+            // ==========================================
+            // 4. YAPAY ZEKA (ENEMY AI)
+            // ==========================================
+            spawnEnemy: function(x, z) {
+                const loader = new GLTFLoader();
+                loader.load('Zombie.glb', (gltf) => {
+                    const model = gltf.scene;
+                    this.initEnemy(model, x, z);
+                }, undefined, () => {
+                    // Model yoksa kırmızı kutu
+                    const geo = new THREE.BoxGeometry(1, 2.5, 1);
+                    const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                    const model = new THREE.Mesh(geo, mat);
+                    this.initEnemy(model, x, z);
+                });
+            },
+
+            initEnemy: function(model, x, z) {
+                model.position.set(x, 0, z);
+                this.scene.add(model);
+                
+                // AI Verileri
+                this.enemy = {
+                    mesh: model,
+                    state: 'PATROL', // PATROL, CHASE, SEARCH
+                    speed: 3.5,
+                    target: new THREE.Vector3(),
+                    patrolTimer: 0
+                };
+            },
+
+            updateEnemy: function(dt) {
+                if (!this.enemy) return;
+                const e = this.enemy;
+                const pPos = this.camera.position;
+                const dist = e.mesh.position.distanceTo(pPos);
+
+                // Basit Görüş Alanı Kontrolü (Raycast yapılabilir ama basit tutuyoruz performans için)
+                let canSee = dist < 15; 
+
+                // STATE MACHINE
+                switch (e.state) {
+                    case 'PATROL':
+                        if (canSee) {
+                            e.state = 'CHASE';
+                            this.audio.playJumpscare(); // GÖRDÜ!
+                        } else {
+                            // Rastgele gezinme
+                            e.patrolTimer -= dt;
+                            if (e.patrolTimer <= 0) {
+                                e.target.set(
+                                    (Math.random()-0.5)*40,
+                                    0,
+                                    (Math.random()-0.5)*40
+                                );
+                                e.patrolTimer = 5;
+                            }
+                            this.moveEnemyTowards(e.target, dt * 0.5); // Yavaş yürü
+                        }
+                        break;
+
+                    case 'CHASE':
+                        this.moveEnemyTowards(pPos, dt * 1.5); // Hızlı koş
+                        if (dist < 1.5) {
+                            this.gameOver();
+                        }
+                        if (dist > 20) e.state = 'SEARCH'; // Kaçtık
+                        break;
+                    
+                    case 'SEARCH':
+                        // Son görülen yerde bekle
+                        e.patrolTimer -= dt;
+                        if(e.patrolTimer <= 0) e.state = 'PATROL';
+                        break;
+                }
+            },
+
+            moveEnemyTowards: function(targetPos, speed) {
+                this.enemy.mesh.lookAt(targetPos.x, 0, targetPos.z);
+                this.enemy.mesh.translateZ(speed);
+            },
+
+            // ==========================================
+            // 5. OYUNCU VE KONTROLLER
+            // ==========================================
+            setupInputs: function() {
+                this.keys = { w:false, a:false, s:false, d:false, shift:false };
+                
+                document.addEventListener('keydown', (e) => {
+                    if (e.code === 'KeyW') this.keys.w = true;
+                    if (e.code === 'KeyA') this.keys.a = true;
+                    if (e.code === 'KeyS') this.keys.s = true;
+                    if (e.code === 'KeyD') this.keys.d = true;
+                    if (e.shiftKey) this.keys.shift = true;
+                    if (e.code === 'KeyE') this.checkInteraction();
+                });
+
+                document.addEventListener('keyup', (e) => {
+                    if (e.code === 'KeyW') this.keys.w = false;
+                    if (e.code === 'KeyA') this.keys.a = false;
+                    if (e.code === 'KeyS') this.keys.s = false;
+                    if (e.code === 'KeyD') this.keys.d = false;
+                    if (!e.shiftKey) this.keys.shift = false;
+                });
+
+                document.body.addEventListener('click', () => {
+                    if(this.active) this.controls.lock();
+                });
+            },
+
+            checkInteraction: function() {
+                // Raycasting (Bakılan objeyi bulma)
+                const raycaster = new THREE.Raycaster();
+                raycaster.setFromCamera(new THREE.Vector2(0,0), this.camera);
+                
+                const intersects = raycaster.intersectObjects(this.objects);
+                if (intersects.length > 0) {
+                    const obj = intersects[0].object;
+                    const dist = intersects[0].distance;
+                    
+                    if (dist < 3) {
+                        // KAPI
+                        if (obj.userData.type === 'door') {
+                            if (this.player.keysFound > 0) {
+                                document.getElementById('win-screen').classList.remove('hidden');
+                                document.exitPointerLock();
+                                this.active = false;
+                            } else {
+                                this.showNotification("KİLİTLİ! ANAHTAR (NOT) GEREKLİ.");
+                            }
+                        }
+                        // NOT
+                        else if (obj.userData.type === 'note') {
+                            this.openNote(obj.userData.id);
+                            this.player.keysFound = 1; // Notu bulunca anahtarı almış sayıyoruz hikaye gereği
+                            this.scene.remove(obj); // Notu yerden al
+                        }
+                    }
+                }
+            },
+
+            openNote: function(id) {
+                const titles = ["DENEY RAPORU #004", "BAKICI GÜNLÜĞÜ", "ACİL DURUM"];
+                const texts = [
+                    "Denek-0 (ZOMBIE) çok agresif. Işığa tepki veriyor. Pili korumalıyım.",
+                    "Kapının şifresi değiştirildi. Anahtarı yönetici odasında unuttum.",
+                    "Kaçın! Sadece ana kapıdan çıkış var ama kilitli."
+                ];
+                
+                document.getElementById('note-title').innerText = titles[id] || "BİLİNMEYEN KAĞIT";
+                document.getElementById('note-body').innerText = texts[id] || "Okunamıyor...";
+                
+                document.getElementById('note-overlay').style.display = 'flex';
+                document.exitPointerLock();
+                
+                // Not kapatma olayı
+                const closeNote = (e) => {
+                    if(e.key === 'e' || e.key === 'Escape') {
+                        document.getElementById('note-overlay').style.display = 'none';
+                        this.controls.lock();
+                        window.removeEventListener('keydown', closeNote);
+                    }
+                };
+                window.setTimeout(() => window.addEventListener('keydown', closeNote), 500);
+            },
+
+            // ==========================================
+            // 6. FİZİK & HAREKET LOOP
+            // ==========================================
+            updatePlayer: function(dt) {
+                // Stamina ve Hız
+                let speed = CONFIG.WALK_SPEED;
+                if (this.keys.shift && this.player.stamina > 0) {
+                    speed = CONFIG.RUN_SPEED;
+                    this.player.stamina -= dt * 20;
+                } else {
+                    if (this.player.stamina < 100) this.player.stamina += dt * 5;
+                }
+                
+                // Pil Tüketimi
+                this.player.battery -= dt * CONFIG.BATTERY_DRAIN;
+                if (this.player.battery <= 0) {
+                    this.gameOver("PİL BİTTİ. KARANLIKTA KAYBOLDUN.");
+                }
+
+                // UI Güncelleme
+                document.getElementById('stamina-bar').style.width = this.player.stamina + "%";
+                document.getElementById('battery-level').innerText = `BAT: ${Math.floor(this.player.battery)}%`;
+                
+                // Titrek Işık (Gerilim)
+                this.flashlight.intensity = 2 + Math.random() * 0.5 * (this.player.battery/100);
+
+                // Hareket Hesaplama
+                const velocity = new THREE.Vector3();
+                if (this.keys.w) velocity.z = speed * dt;
+                if (this.keys.s) velocity.z = -speed * dt;
+                if (this.keys.a) velocity.x = -speed * dt;
+                if (this.keys.d) velocity.x = speed * dt;
+
+                this.controls.moveRight(velocity.x);
+                this.controls.moveForward(velocity.z);
+
+                // --- ÇARPIŞMA (COLLISION) ---
+                // Çok basit bir duvar kontrolü (Kameranın olduğu yerde duvar var mı?)
+                const pPos = this.camera.position;
+                this.walls.forEach(box => {
+                    if (box.containsPoint(pPos)) {
+                        // Duvarın içine girdiysek geri it
+                        this.controls.moveRight(-velocity.x);
+                        this.controls.moveForward(-velocity.z);
+                    }
+                });
+                
+                // Yerden yüksekliği sabitle
+                this.camera.position.y = 1.7;
+
+                // Adım Sesi
+                if (velocity.length() > 0 && Math.random() < 0.05) {
+                    this.audio.playStep();
+                }
+            },
+
+            gameOver: function(reason = "BAĞLANTI KOPTU") {
+                this.active = false;
+                document.exitPointerLock();
+                document.getElementById('game-over-screen').classList.remove('hidden');
+                document.querySelector('#game-over-screen p').innerText = reason;
+            },
+
+            showNotification: function(text) {
+                const el = document.getElementById('interaction-text');
+                el.innerText = text;
+                el.style.display = 'block';
+                setTimeout(() => { el.style.display = 'none'; el.innerText = "İNCELEMEK İÇİN [E]"; }, 2000);
+            },
+
+            // ==========================================
+            // MAIN LOOP
+            // ==========================================
+            gameLoop: function() {
+                if (!this.active) return;
+                requestAnimationFrame(() => this.gameLoop());
+
+                const dt = 0.016; // Yaklaşık 60 FPS
+                
+                this.updatePlayer(dt);
+                this.updateEnemy(dt);
+                this.renderer.render(this.scene, this.camera);
+                
+                // Timer güncelle
+                const t = Date.now();
+                document.getElementById('timer').innerText = t;
+
+                // Etkileşim kontrolü (UI için)
+                const raycaster = new THREE.Raycaster();
+                raycaster.setFromCamera(new THREE.Vector2(0,0), this.camera);
+                const hits = raycaster.intersectObjects(this.objects);
+                const interactText = document.getElementById('interaction-text');
+                
+                if (hits.length > 0 && hits[0].distance < 3) {
+                    interactText.style.display = 'block';
+                } else {
+                    interactText.style.display = 'none';
+                }
+            }
+        };
+
+        // Window değişkenine ata ki HTML'den erişebilelim
+        window.Game = Game;
+
     </script>
 </body>
 </html>
