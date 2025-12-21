@@ -89,7 +89,7 @@
             playerSpeed: 4.0,
             mouseSensitivity: 0.002,
             enemyScale: 1.0,  // Rakip boyutu
-            gloveScale: 0.1,  // Eldiven boyutu (Glb'ye göre değiştir)
+            gloveScale: 0.1,  // Eldiven boyutu
             punchDamage: 10,
             enemyDamage: 15,
             debugMode: false
@@ -100,12 +100,12 @@
             constructor() {
                 this.scene = new THREE.Scene();
                 this.scene.background = new THREE.Color(0x050505);
-                this.scene.fog = new THREE.FogExp2(0x050505, 0.015); // Volumetric Fog hissi
+                this.scene.fog = new THREE.FogExp2(0x050505, 0.015);
 
                 this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
-                this.camera.position.set(0, 1.75, 0); // Göz hizası
+                this.camera.position.set(0, 1.75, 0);
 
-                this.renderer = new THREE.WebGLRenderer({ antialias: false }); // Post-process için false
+                this.renderer = new THREE.WebGLRenderer({ antialias: false });
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
                 this.renderer.setPixelRatio(window.devicePixelRatio);
                 this.renderer.shadowMap.enabled = true;
@@ -114,14 +114,14 @@
                 this.renderer.toneMappingExposure = 0.8;
                 document.body.appendChild(this.renderer.domElement);
 
-                // Post-Processing (UE5 Bloom Effect)
+                // Post-Processing
                 this.composer = new EffectComposer(this.renderer);
                 const renderPass = new RenderPass(this.scene, this.camera);
                 this.composer.addPass(renderPass);
 
                 const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
                 bloomPass.threshold = 0.2;
-                bloomPass.strength = 0.4; // Işık patlama şiddeti
+                bloomPass.strength = 0.4;
                 bloomPass.radius = 0.5;
                 this.composer.addPass(bloomPass);
                 
@@ -137,21 +137,19 @@
                 
                 this.setupLights();
                 this.setupInputs();
-                this.loadAssets();
                 
                 // Game States
                 this.player = { hp: 100, isPunching: false, canPunch: true };
                 this.enemy = { hp: 100, state: 'IDLE', action: null, model: null, mixer: null, animations: {} };
                 
+                this.loadAssets();
                 window.addEventListener('resize', () => this.onResize());
             }
 
             setupLights() {
-                // Ambient
                 const ambient = new THREE.HemisphereLight(0x444444, 0x000000, 0.4);
                 this.scene.add(ambient);
 
-                // Main Spotlight (Ring Işığı)
                 const spot = new THREE.SpotLight(0xffffff, 150);
                 spot.position.set(0, 8, 0);
                 spot.angle = Math.PI / 6;
@@ -164,7 +162,6 @@
                 spot.shadow.bias = -0.0001;
                 this.scene.add(spot);
 
-                // Rim Light (Karakterin arkasından vuran mavi ışık - Sinematik efekt)
                 const rimLight = new THREE.DirectionalLight(0x3366ff, 2);
                 rimLight.position.set(0, 2, -5);
                 this.scene.add(rimLight);
@@ -185,12 +182,16 @@
                     });
                 };
 
+                manager.onError = (url) => {
+                    console.error('Hata oluştu:', url);
+                };
+
                 // 1. RING
                 loader.load('./Boxing Ring.glb', (gltf) => {
                     const model = gltf.scene;
                     model.traverse(o => { if(o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
                     this.scene.add(model);
-                }, undefined, null, manager);
+                }, undefined, (err) => console.log("Ring Yüklenemedi, devam ediliyor..."));
 
                 // 2. ENEMY (MALE FIGHTER)
                 loader.load('./Male Fighter.glb', (gltf) => {
@@ -206,33 +207,36 @@
                     this.mixers.push(mixer);
                     this.enemy.mixer = mixer;
                     
-                    // Animasyonları işle (İsim eşleştirmesi gerekebilir)
-                    gltf.animations.forEach((clip) => {
-                        // Basit isim eşleştirmesi (Dosyada isimler farklı olabilir!)
-                        const name = clip.name.toLowerCase();
-                        let action = mixer.clipAction(clip);
-                        
-                        if(name.includes('idle')) this.enemy.animations['idle'] = action;
-                        else if(name.includes('punch') || name.includes('attack')) this.enemy.animations['attack'] = action;
-                        else if(name.includes('hit') || name.includes('reaction')) this.enemy.animations['hit'] = action;
-                        else this.enemy.animations[name] = action; // Diğerlerini olduğu gibi kaydet
-                    });
+                    if(gltf.animations.length > 0) {
+                        gltf.animations.forEach((clip) => {
+                            const name = clip.name.toLowerCase();
+                            let action = mixer.clipAction(clip);
+                            
+                            if(name.includes('idle')) this.enemy.animations['idle'] = action;
+                            else if(name.includes('punch') || name.includes('attack')) this.enemy.animations['attack'] = action;
+                            else if(name.includes('hit') || name.includes('reaction')) this.enemy.animations['hit'] = action;
+                            else this.enemy.animations[name] = action;
+                        });
 
-                    // Başlangıç animasyonu
-                    if(this.enemy.animations['idle']) this.enemy.animations['idle'].play();
-                    else if(gltf.animations.length > 0) mixer.clipAction(gltf.animations[0]).play(); // Fallback
-
-                }, undefined, null, manager);
+                        // Başlangıç animasyonu
+                        if(this.enemy.animations['idle']) this.enemy.animations['idle'].play();
+                        else mixer.clipAction(gltf.animations[0]).play();
+                    }
+                }, undefined, (err) => {
+                    console.error("Male Fighter Yüklenemedi:", err);
+                    // Hata olsa bile oyunun çökmemesi için boş nesne
+                    this.enemy.model = new THREE.Object3D(); 
+                }, manager);
 
                 // 3. PLAYER (GLOVES)
                 loader.load('./Boxing Gloves.glb', (gltf) => {
                     this.gloves = gltf.scene;
                     this.gloves.scale.set(CONFIG.gloveScale, CONFIG.gloveScale, CONFIG.gloveScale);
-                    this.gloves.position.set(0.3, -0.4, -0.5); // FPS Pozisyonu
-                    this.gloves.rotation.set(0, Math.PI, 0); // Bize dönük
+                    this.gloves.position.set(0.3, -0.4, -0.5);
+                    this.gloves.rotation.set(0, Math.PI, 0);
                     this.camera.add(this.gloves);
                     this.scene.add(this.camera);
-                }, undefined, null, manager);
+                }, undefined, (err) => console.log("Eldiven Yüklenemedi"), manager);
             }
 
             setupInputs() {
@@ -253,80 +257,69 @@
                 this.player.isPunching = true;
                 this.player.canPunch = false;
 
-                // 1. Procedural Animation (Eldiveni İleri İt)
+                // 1. Procedural Animation
                 const startZ = -0.5;
                 const targetZ = -1.2;
                 let progress = 0;
                 
-                // Sağ el veya sol el rastgele
                 const isRight = Math.random() > 0.5;
                 const armOffset = isRight ? 0.3 : -0.3;
-                this.gloves.position.x = armOffset; // O anki ele geç
+                this.gloves.position.x = armOffset; 
 
                 const punchInterval = setInterval(() => {
                     progress += 0.15;
                     if(progress < 1) {
-                        // İleri
                         this.gloves.position.z = THREE.MathUtils.lerp(startZ, targetZ, progress);
                     } else if (progress < 2) {
-                        // Geri
                         this.gloves.position.z = THREE.MathUtils.lerp(targetZ, startZ, progress - 1);
                     } else {
                         clearInterval(punchInterval);
                         this.gloves.position.z = startZ;
                         this.player.isPunching = false;
-                        setTimeout(() => this.player.canPunch = true, 300); // Cooldown
+                        setTimeout(() => this.player.canPunch = true, 300);
                     }
                 }, 16);
 
-                // 2. Hit Detection
                 this.checkHit();
             }
 
             checkHit() {
                 if(!this.enemy.model) return;
 
-                // Raycaster yerine basit açı ve mesafe kontrolü (Daha performanslı)
                 const playerPos = new THREE.Vector3();
                 const enemyPos = new THREE.Vector3();
                 this.camera.getWorldPosition(playerPos);
                 this.enemy.model.getWorldPosition(enemyPos);
                 
                 const distance = playerPos.distanceTo(enemyPos);
-                
-                // Kameranın baktığı yön vektörü
                 const direction = new THREE.Vector3();
                 this.camera.getWorldDirection(direction);
                 
-                // Rakibe doğru mu bakıyoruz?
                 const toEnemy = enemyPos.clone().sub(playerPos).normalize();
                 const angle = direction.angleTo(toEnemy);
 
-                if (distance < 2.5 && angle < 0.5) { // Mesafe ve Açı uygunsa VURDUK
+                if (distance < 3.0 && angle < 0.6) { 
                     this.damageEnemy();
                 }
             }
 
             damageEnemy() {
-                // Efektler
                 this.cameraShake(0.2);
-                this.spawnParticles(this.enemy.model.position.clone().add(new THREE.Vector3(0, 1.5, 0)), 10);
+                if(this.enemy.model) {
+                    this.spawnParticles(this.enemy.model.position.clone().add(new THREE.Vector3(0, 1.5, 0)), 10);
+                }
                 this.flashScreen();
 
-                // Crosshair Feedback
                 const ch = document.getElementById('crosshair');
                 ch.classList.add('crosshair-active');
                 setTimeout(() => ch.classList.remove('crosshair-active'), 100);
 
-                // Hasar Hesapla
                 this.enemy.hp -= CONFIG.punchDamage;
                 document.getElementById('enemy-hp').style.width = this.enemy.hp + '%';
 
-                // Rakip Animasyonu (Hit Reaction)
                 if(this.enemy.animations['hit']) {
                     const hitAnim = this.enemy.animations['hit'];
-                    hitAnim.reset().setLoop(THREE.LoopOnce).play();
-                    // Önceki animasyonu durdurmak gerekebilir, şimdilik basit blending
+                    if(hitAnim) hitAnim.reset().setLoop(THREE.LoopOnce).play();
                 }
 
                 if(this.enemy.hp <= 0) {
@@ -338,7 +331,6 @@
                 this.player.hp -= CONFIG.enemyDamage;
                 document.getElementById('player-hp').style.width = this.player.hp + '%';
                 
-                // Kan Efekti (Ekran Kızarması)
                 const overlay = document.getElementById('damage-overlay');
                 overlay.style.opacity = 1;
                 setTimeout(() => overlay.style.opacity = 0, 500);
@@ -350,33 +342,22 @@
                 }
             }
 
-            // --- AI SYSTEM (State Machine) ---
+            // --- AI SYSTEM ---
             updateAI(dt) {
                 if(!this.enemy.model || this.enemy.hp <= 0) return;
 
                 const dist = this.camera.position.distanceTo(this.enemy.model.position);
-                
-                // Rakip her zaman oyuncuya baksın (Y ekseninde)
                 this.enemy.model.lookAt(this.camera.position.x, this.enemy.model.position.y, this.camera.position.z);
 
-                // Basit Durum Makinesi
                 if (dist > 2.0) {
-                    // CHASE STATE
                     const speed = 2.0 * dt;
-                    this.enemy.model.translateZ(speed); // TranslateZ pozitif ileri demektir (modele göre değişir)
-                    
-                    // Yürüme animasyonu varsa burada oynatılır
+                    this.enemy.model.translateZ(speed);
                 } else {
-                    // ATTACK STATE
-                    // Rastgele saldırı
-                    if(Math.random() < 0.02) { // Her frame %2 şans (Yaklaşık saniyede 1-2 vuruş)
-                         // Vuruş Animasyonu
+                    if(Math.random() < 0.02) { 
                          if(this.enemy.animations['attack']) {
                              const att = this.enemy.animations['attack'];
-                             if(!att.isRunning()) att.reset().setLoop(THREE.LoopOnce).play();
+                             if(att && !att.isRunning()) att.reset().setLoop(THREE.LoopOnce).play();
                          }
-                         
-                         // Oyuncuya hasar ver (Gecikmeli, yumruk değdiğinde)
                          setTimeout(() => {
                              if(this.camera.position.distanceTo(this.enemy.model.position) < 2.5) {
                                  this.damagePlayer();
@@ -387,23 +368,17 @@
             }
 
             // --- EFFECTS & PHYSICS ---
-            
             spawnParticles(pos, count) {
-                // Ter/Kan damlaları
                 const geo = new THREE.BoxGeometry(0.05, 0.05, 0.05);
-                const mat = new THREE.MeshBasicMaterial({ color: 0x00d2ff }); // Mavi ter
+                const mat = new THREE.MeshBasicMaterial({ color: 0x00d2ff });
 
                 for(let i=0; i<count; i++) {
                     const mesh = new THREE.Mesh(geo, mat);
                     mesh.position.copy(pos);
-                    
-                    // Rastgele saçılma
                     mesh.position.x += (Math.random() - 0.5);
                     mesh.position.y += (Math.random() - 0.5);
-                    
                     this.scene.add(mesh);
                     
-                    // Fizik bilgisi ekle
                     this.particles.push({
                         mesh: mesh,
                         vel: new THREE.Vector3((Math.random()-0.5)*0.2, Math.random()*0.2, (Math.random()-0.5)*0.2),
@@ -416,10 +391,8 @@
                 for (let i = this.particles.length - 1; i >= 0; i--) {
                     const p = this.particles[i];
                     p.life -= 0.02;
-                    
-                    p.vel.y -= 0.01; // Gravity
+                    p.vel.y -= 0.01;
                     p.mesh.position.add(p.vel);
-                    
                     if(p.life <= 0) {
                         this.scene.remove(p.mesh);
                         this.particles.splice(i, 1);
@@ -457,7 +430,6 @@
                 if(this.keys.a) this.controls.moveRight(-speed);
                 if(this.keys.d) this.controls.moveRight(speed);
                 
-                // Eldiven sallanma efekti (Walking Bobbing)
                 if(this.gloves && (this.keys.w || this.keys.a || this.keys.s || this.keys.d)) {
                     const time = Date.now() * 0.01;
                     this.gloves.position.y = -0.4 + Math.sin(time) * 0.02;
@@ -493,19 +465,14 @@
                 this.updateAI(dt);
                 this.updateParticles();
 
-                // Animasyonlar
                 this.mixers.forEach(mixer => mixer.update(dt));
-
-                // Post-Processing Render
                 this.composer.render();
             }
         }
 
-        // --- INIT ---
         window.onload = () => {
             const game = new GameEngine();
         };
-
     </script>
 </body>
 </html>
