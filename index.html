@@ -3,174 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PROJECT: ECHO [ULTIMATE]</title>
+    <title>PROJECT: BLACKOUT</title>
     <style>
-        /* --- CSS (GÖRSEL MOTOR) --- */
-        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap');
 
-        :root {
-            --hud-color: #0f0;
-            --bg-color: #000;
-            --alert-color: #f00;
-        }
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Oswald', sans-serif; user-select: none; }
 
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: var(--bg-color);
-            font-family: 'Share Tech Mono', monospace;
-            user-select: none;
-        }
-
-        /* VHS / BODYCAM EFEKTLERİ */
-        #noise {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            pointer-events: none; z-index: 10; opacity: 0.15;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-        }
-        
-        #overlay-glitch {
+        /* --- BODYCAM EFEKTLERİ (DAHA NET) --- */
+        #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(0,20,0,0) 50%, rgba(0,0,0,1) 120%);
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
-            z-index: 11; pointer-events: none;
+            pointer-events: none; z-index: 10;
         }
 
-        #rec-ui {
-            position: absolute; top: 20px; left: 30px;
-            color: var(--hud-color); font-size: 24px;
-            z-index: 20; display: flex; align-items: center; gap: 15px;
-            text-shadow: 0 0 5px var(--hud-color);
+        /* Köşe Karartması (Vignette) - Daha yumuşak */
+        #vignette {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.9) 100%);
         }
 
-        .blink { animation: blinker 1.5s linear infinite; color: red; }
-        @keyframes blinker { 50% { opacity: 0; } }
-
-        /* HUD ELEMANLARI */
-        #stamina-container {
-            position: absolute; bottom: 30px; left: 30px;
-            width: 200px; height: 10px; border: 1px solid #333;
-            background: rgba(0,0,0,0.5); z-index: 20;
+        /* Kamera Yazıları */
+        #cam-info {
+            position: absolute; top: 30px; right: 30px; text-align: right;
+            color: #fff; font-size: 20px; text-shadow: 0 0 5px rgba(255,255,255,0.5);
+            font-family: monospace;
         }
-        #stamina-bar { width: 100%; height: 100%; background: var(--hud-color); transition: width 0.1s; }
-
-        #battery-container {
-            position: absolute; top: 20px; right: 30px;
-            text-align: right; color: var(--hud-color); z-index: 20;
-        }
-
-        #interaction-text {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, 50px);
-            color: #fff; font-size: 18px; text-shadow: 0 0 5px #fff;
-            display: none; z-index: 20;
+        #rec-dot {
+            color: red; animation: blink 1s infinite;
         }
 
         #crosshair {
-            position: absolute; top: 50%; left: 50%;
-            width: 6px; height: 6px; background: rgba(255,255,255,0.5);
-            border-radius: 50%; transform: translate(-50%, -50%);
-            z-index: 15;
+            position: absolute; top: 50%; left: 50%; width: 4px; height: 4px;
+            background: rgba(255,255,255,0.8); border-radius: 50%;
+            transform: translate(-50%, -50%); box-shadow: 0 0 4px white;
         }
 
-        /* NOT VE BELGE OKUMA EKRANI */
-        #note-overlay {
+        /* KAN EFEKTİ (HASAR ALINCA) */
+        #blood-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); display: none;
+            background: radial-gradient(circle, transparent 40%, rgba(180,0,0,0.8) 90%);
+            display: none; z-index: 15; mix-blend-mode: multiply;
+        }
+
+        /* --- MENÜLER --- */
+        #menu-screen, #death-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #050505; display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 100;
-        }
-        #note-content {
-            width: 500px; padding: 40px; background: #fff; color: #000;
-            font-family: 'Courier Prime', monospace; transform: rotate(-1deg);
-            box-shadow: 0 0 50px rgba(255,255,255,0.1);
+            color: white;
         }
 
-        /* MENÜLER */
-        #login-screen, #game-over-screen, #win-screen {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 200;
-        }
-        
-        h1 { color: var(--hud-color); font-size: 4rem; margin: 0; letter-spacing: 5px; text-transform: uppercase; }
-        p { color: #888; max-width: 600px; text-align: center; }
+        h1 { font-size: 5rem; margin: 0; letter-spacing: 10px; text-transform: uppercase; background: -webkit-linear-gradient(#fff, #666); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
         input {
-            background: transparent; border: 2px solid var(--hud-color);
-            color: var(--hud-color); padding: 15px; font-size: 1.5rem;
-            font-family: 'Share Tech Mono', monospace; text-align: center;
-            margin: 20px 0; outline: none; width: 300px;
+            background: #111; border: 1px solid #444; color: white;
+            padding: 15px; font-size: 1.2rem; margin: 20px;
+            text-align: center; width: 250px; outline: none;
+            font-family: 'Oswald', sans-serif; transition: 0.3s;
         }
-        input:focus { box-shadow: 0 0 20px var(--hud-color); }
+        input:focus { border-color: #fff; box-shadow: 0 0 15px rgba(255,255,255,0.2); }
 
         button {
-            background: var(--hud-color); color: #000; border: none;
-            padding: 15px 40px; font-size: 1.2rem; font-weight: bold;
-            font-family: 'Share Tech Mono', monospace; cursor: pointer;
-            transition: 0.3s;
+            background: #fff; color: #000; border: none; padding: 15px 50px;
+            font-size: 1.5rem; font-weight: bold; cursor: pointer;
+            text-transform: uppercase; font-family: 'Oswald', sans-serif;
+            transition: 0.2s;
         }
-        button:hover { background: #fff; box-shadow: 0 0 20px #fff; }
+        button:hover { background: #ccc; transform: scale(1.05); }
 
+        @keyframes blink { 50% { opacity: 0; } }
         .hidden { display: none !important; }
 
-        #terminal-log {
-            position: absolute; bottom: 10px; left: 10px;
-            color: #333; font-size: 12px; pointer-events: none;
-        }
     </style>
 </head>
 <body>
 
-    <div id="noise"></div>
-    <div id="overlay-glitch"></div>
-
-    <div id="rec-ui" class="hidden">
-        <span class="blink">● REC</span>
-        <span id="timer">00:00:00:00</span>
-        <span style="font-size:14px; margin-left:20px; border:1px solid #0f0; padding:2px 5px;" id="nametag-ui">CAM-1</span>
-    </div>
-
-    <div id="battery-container" class="hidden">
-        <div style="font-size: 24px;" id="battery-level">BAT: 100%</div>
-        <div style="font-size: 12px;">IR MODE: ACTIVE</div>
-    </div>
-
-    <div id="stamina-container" class="hidden">
-        <div id="stamina-bar"></div>
-    </div>
-
-    <div id="crosshair" class="hidden"></div>
-    <div id="interaction-text">İNCELEMEK İÇİN [E]</div>
-
-    <div id="login-screen">
-        <h1 style="text-shadow: 0 0 10px red; color:white;">PROJECT: ECHO</h1>
-        <p>BİLİNMEYEN SİNYAL TESPİT EDİLDİ. GÜVENLİ BAĞLANTI İÇİN DAVET KODU GEREKLİDİR.</p>
-        <br>
-        <input type="text" id="code-input" placeholder="DAVET KODU" autocomplete="off">
-        <input type="text" id="name-input" placeholder="AJAN ADI" maxlength="10" autocomplete="off">
-        <button onclick="Game.init()">SİSTEME GİRİŞ</button>
-        <div id="terminal-log">v2.0.4.5 - BUILD 9928</div>
-    </div>
-
-    <div id="note-overlay">
-        <div id="note-content">
-            <h2 id="note-title">BAŞLIK</h2>
-            <p id="note-body">İçerik...</p>
-            <br>
-            <small style="color:red;">[KAPATMAK İÇİN 'E' VEYA 'ESC']</small>
+    <div id="ui-layer">
+        <div id="vignette"></div>
+        <div id="cam-info">
+            <span id="rec-dot">● REC</span><br>
+            <span id="time-display">00:00:00</span><br>
+            ISO 800 | F2.8
         </div>
+        <div id="crosshair"></div>
+        <div id="blood-overlay"></div>
     </div>
 
-    <div id="game-over-screen" class="hidden">
-        <h1 style="color:red;">BAĞLANTI KOPTU</h1>
-        <p>OPERATÖRÜN HAYATİ FONKSİYONLARI DURDU.</p>
-        <button onclick="location.reload()">YENİDEN BAĞLAN</button>
+    <div id="menu-screen">
+        <h1>BLACKOUT</h1>
+        <p style="color:#888;">HEDEF: GİZLİ KAPIYI BUL VE KAÇ.</p>
+        <input type="text" id="invite-code" placeholder="GİRİŞ KODU">
+        <button onclick="startGame()">BAŞLAT</button>
+        <p id="error-msg" style="color:red; display:none; margin-top:10px;">GEÇERSİZ KOD</p>
     </div>
 
-    <div id="win-screen" class="hidden">
-        <h1 style="color:#0f0;">ÇIKIŞ BAŞARILI</h1>
-        <p>VERİLER BULUTA YÜKLENDİ. TEBRİKLER AJAN.</p>
-        <button onclick="location.reload()">YENİ GÖREV</button>
+    <div id="death-screen" class="hidden">
+        <h1 style="color:red; -webkit-text-fill-color: red;">ÖLDÜN</h1>
+        <p>ZOMBİ SENİ YAKALADI.</p>
+        <button onclick="location.reload()">TEKRAR DENE</button>
     </div>
 
     <script type="importmap">
@@ -187,494 +116,355 @@
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-        // ==========================================
-        // 1. SES MOTORU (AUDIO ENGINE)
-        // ==========================================
-        class AudioEngine {
-            constructor() {
-                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-                this.masterGain = this.ctx.createGain();
-                this.masterGain.gain.value = 0.5;
-                this.masterGain.connect(this.ctx.destination);
-            }
+        // --- AYARLAR ---
+        const CODE = "1234"; // Basit test kodu
+        let isGameRunning = false;
+        
+        // --- SES SİSTEMİ (Kalp Atışı) ---
+        // Rahatsız edici cızırtılar yerine sadece kalp sesi
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let lastHeartbeat = 0;
+        
+        function playHeartbeat(distance) {
+            // Mesafe ne kadar azsa (yakınsa), kalp o kadar hızlı atar
+            // Mesafe 15m'den fazlaysa ses yok.
+            if (distance > 15) return;
 
-            playTone(freq, type, duration, vol = 0.1) {
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = type;
-                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+            // Atış hızı: Yakınsa 0.3sn, uzaksa 1.5sn
+            const rate = Math.max(0.3, distance / 10); 
+            
+            if (audioCtx.currentTime - lastHeartbeat > rate) {
+                lastHeartbeat = audioCtx.currentTime;
+                
+                // Tok bir "Güm" sesi (Low Frequency)
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.frequency.setValueAtTime(60, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+                
+                gain.gain.setValueAtTime(0.5, audioCtx.currentTime); // Ses seviyesi
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
                 
                 osc.connect(gain);
-                gain.connect(this.masterGain);
+                gain.connect(audioCtx.destination);
                 osc.start();
-                osc.stop(this.ctx.currentTime + duration);
-            }
-
-            playAmbient() {
-                // Korkunç arka plan uğultusu
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(50, this.ctx.currentTime); // Düşük frekans
-                // LFO ile dalgalanma
-                const lfo = this.ctx.createOscillator();
-                lfo.frequency.value = 0.2;
-                const lfoGain = this.ctx.createGain();
-                lfoGain.gain.value = 300; 
-                lfo.connect(lfoGain);
-                lfoGain.connect(osc.frequency);
-                
-                gain.gain.value = 0.05;
-                osc.connect(gain);
-                gain.connect(this.masterGain);
-                lfo.start();
-                osc.start();
-            }
-
-            playStep() {
-                // Rastgele pitch ile ayak sesi simülasyonu
-                const freq = 100 + Math.random() * 50;
-                this.playTone(freq, 'square', 0.1, 0.2);
-            }
-
-            playJumpscare() {
-                // Ani yüksek ses
-                this.playTone(800, 'sawtooth', 0.5, 0.8);
-                this.playTone(120, 'square', 1.0, 0.8);
+                osc.stop(audioCtx.currentTime + 0.2);
             }
         }
 
-        // ==========================================
-        // 2. OYUN YÖNETİCİSİ (GAME MANAGER)
-        // ==========================================
-        const CONFIG = {
-            INVITE_CODE: "ZOMBIE",
-            WALK_SPEED: 8,
-            RUN_SPEED: 14,
-            BATTERY_DRAIN: 0.02, // Saniyede giden pil
-        };
+        // --- THREE.JS KURULUMU ---
+        const scene = new THREE.Scene();
+        // Siyah sis (Karanlık ortam için) - Görüş mesafesini temizledik
+        scene.fog = new THREE.Fog(0x000000, 1, 25); 
 
-        const Game = {
-            active: false,
-            audio: null,
-            scene: null,
-            camera: null,
-            renderer: null,
-            controls: null,
-            player: {
-                height: 1.8,
-                stamina: 100,
-                battery: 100,
-                isRunning: false,
-                keysFound: 0
-            },
-            objects: [], // Etkileşime geçilebilir objeler
-            walls: [],   // Çarpışma kutuları
-            enemy: null, // Zombi referansı
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 100);
+        camera.position.y = 1.7;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio); // Daha keskin görüntü
+        // Tone Mapping (Daha gerçekçi ışık)
+        renderer.toneMapping = THREE.ReinhardToneMapping;
+        renderer.toneMappingExposure = 1.5;
+        document.body.appendChild(renderer.domElement);
+
+        // --- IŞIKLANDIRMA (EL FENERİ) ---
+        // Ambient Light (Ortam ışığı) çok az, zifiri karanlık olmasın
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.05); 
+        scene.add(ambientLight);
+
+        // El Feneri (SpotLight) - Çok daha parlak ve geniş
+        const flashLight = new THREE.SpotLight(0xffffff, 80, 40, 0.5, 0.5, 2);
+        flashLight.position.set(0, 0, 0);
+        flashLight.castShadow = true;
+        camera.add(flashLight);
+        
+        // Fenerin hedefini kameranın baktığı yere sabitle
+        const lightTarget = new THREE.Object3D();
+        lightTarget.position.set(0, 0, -1);
+        camera.add(lightTarget);
+        flashLight.target = lightTarget;
+        
+        scene.add(camera);
+
+        // --- DOKU OLUŞTURUCU (Texture Generator) ---
+        // Bok gibi renkler yerine prosedürel beton/fayans dokusu
+        function createProTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 512;
+            const ctx = canvas.getContext('2d');
             
-            init: function() {
-                const code = document.getElementById('code-input').value.toUpperCase();
-                const name = document.getElementById('name-input').value;
-                
-                if (code !== CONFIG.INVITE_CODE) {
-                    alert("ERİŞİM REDDEDİLDİ: GEÇERSİZ PROTOKOL KODU");
-                    return;
+            // Gri zemin
+            ctx.fillStyle = '#222'; 
+            ctx.fillRect(0,0,512,512);
+            
+            // Kirli detaylar (Noise)
+            for(let i=0; i<5000; i++) {
+                ctx.fillStyle = Math.random() > 0.5 ? '#333' : '#111';
+                ctx.fillRect(Math.random()*512, Math.random()*512, 2, 2);
+            }
+
+            // Çizgiler (Fayans etkisi)
+            ctx.strokeStyle = '#111';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            // Dikey
+            for(let i=0; i<=512; i+=128) { ctx.moveTo(i,0); ctx.lineTo(i,512); }
+            // Yatay
+            for(let i=0; i<=512; i+=128) { ctx.moveTo(0,i); ctx.lineTo(512,i); }
+            ctx.stroke();
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            return tex;
+        }
+
+        const wallTexture = createProTexture();
+        const wallMat = new THREE.MeshStandardMaterial({ 
+            map: wallTexture, 
+            roughness: 0.8,
+            color: 0x888888 // Renk tonunu nötr gri yaptık
+        });
+        const floorMat = new THREE.MeshStandardMaterial({ 
+            map: wallTexture, 
+            roughness: 0.9,
+            color: 0x444444
+        });
+
+        // --- HARİTA (LABİRENT) ---
+        const walls = [];
+        // 1: Duvar, 0: Yol, 9: Zombi, 8: Kapı
+        const map = [
+            [1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,1,0,0,0,9,1],
+            [1,0,1,0,1,0,1,1,1,1],
+            [1,0,1,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,1],
+            [1,1,1,1,1,0,1,1,1,1],
+            [1,8,0,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1]
+        ];
+        
+        const UNIT = 4; // Duvar genişliği
+
+        // Zemin
+        const floorGeo = new THREE.PlaneGeometry(100, 100);
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI/2;
+        scene.add(floor);
+
+        // Tavan
+        const ceiling = new THREE.Mesh(floorGeo, floorMat);
+        ceiling.rotation.x = Math.PI/2;
+        ceiling.position.y = 4; // Yüksek tavan
+        scene.add(ceiling);
+
+        let zombieRef = null;
+        let doorRef = null;
+
+        map.forEach((row, z) => {
+            row.forEach((val, x) => {
+                const px = (x - 5) * UNIT;
+                const pz = (z - 5) * UNIT;
+
+                if(val === 1) {
+                    const geo = new THREE.BoxGeometry(UNIT, 4, UNIT);
+                    const mesh = new THREE.Mesh(geo, wallMat);
+                    mesh.position.set(px, 2, pz);
+                    scene.add(mesh);
+                    walls.push(new THREE.Box3().setFromObject(mesh)); // Çarpışma için
+                } 
+                else if (val === 9) {
+                    // ZOMBIE YERİNE KIRMIZI GÖZLÜ SİYAH BİR ŞEKİL (MODEL YOKSA)
+                    loadZombie(px, pz);
                 }
-
-                document.getElementById('nametag-ui').innerText = "OP: " + (name || "UNKNOWN");
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('rec-ui').classList.remove('hidden');
-                document.getElementById('battery-container').classList.remove('hidden');
-                document.getElementById('stamina-container').classList.remove('hidden');
-                document.getElementById('crosshair').classList.remove('hidden');
-
-                this.audio = new AudioEngine();
-                this.audio.ctx.resume(); // Tarayıcı izni için
-                this.audio.playAmbient();
-
-                this.setupThreeJS();
-                this.buildLevel();
-                this.setupInputs();
-                
-                this.active = true;
-                this.gameLoop();
-            },
-
-            setupThreeJS: function() {
-                this.scene = new THREE.Scene();
-                this.scene.fog = new THREE.FogExp2(0x000000, 0.08);
-
-                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 100);
-                
-                // Night Vision Işığı (Fener)
-                this.flashlight = new THREE.SpotLight(0x00ff00, 100, 30, 0.6, 0.5, 1);
-                this.flashlight.position.set(0,0,0);
-                this.camera.add(this.flashlight);
-                this.scene.add(this.camera);
-
-                this.renderer = new THREE.WebGLRenderer({ antialias: true });
-                this.renderer.setSize(window.innerWidth, window.innerHeight);
-                document.body.appendChild(this.renderer.domElement);
-
-                this.controls = new PointerLockControls(this.camera, document.body);
-                
-                // Ortam Işığı (Çok karanlık)
-                const ambient = new THREE.AmbientLight(0xffffff, 0.02);
-                this.scene.add(ambient);
-            },
-
-            // ==========================================
-            // 3. HARİTA OLUŞTURUCU (LEVEL GENERATOR)
-            // ==========================================
-            buildLevel: function() {
-                // 1: Duvar, 0: Boş, 2: Kapı, 3: Not, 9: Zombi Spawn
-                const mapData = [
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                    [1,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
-                    [1,0,1,0,1,0,1,1,1,1,1,1,1,0,1],
-                    [1,0,1,0,0,0,0,0,0,3,0,0,1,0,1],
-                    [1,0,1,1,1,1,1,0,1,1,1,0,1,0,1],
-                    [1,0,0,0,0,9,1,0,1,3,0,0,0,0,1],
-                    [1,1,1,0,1,1,1,0,1,1,1,1,1,0,1],
-                    [1,3,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,1,1,1,1,2,1,1,1,1,1,1,1,1,1]
-                ];
-
-                const UNIT = 5; // Her karenin boyutu
-                const wallGeo = new THREE.BoxGeometry(UNIT, UNIT*1.5, UNIT);
-                const wallMat = new THREE.MeshStandardMaterial({ 
-                    color: 0x111111, roughness: 0.9,
-                    map: new THREE.TextureLoader().load('https://threejs.org/examples/textures/brick_diffuse.jpg') 
-                }); // Placeholder texture
-
-                const floorGeo = new THREE.PlaneGeometry(100, 100);
-                const floorMat = new THREE.MeshStandardMaterial({ color: 0x050505 });
-                const floor = new THREE.Mesh(floorGeo, floorMat);
-                floor.rotation.x = -Math.PI/2;
-                this.scene.add(floor);
-
-                mapData.forEach((row, z) => {
-                    row.forEach((type, x) => {
-                        const posX = (x - 7) * UNIT;
-                        const posZ = (z - 4) * UNIT;
-
-                        if (type === 1) { // DUVAR
-                            const wall = new THREE.Mesh(wallGeo, wallMat);
-                            wall.position.set(posX, UNIT/1.5, posZ);
-                            this.scene.add(wall);
-                            
-                            // Çarpışma kutusu
-                            const box = new THREE.Box3().setFromObject(wall);
-                            this.walls.push(box);
-                        }
-                        else if (type === 2) { // KAPI (Door.glb)
-                            const loader = new GLTFLoader();
-                            loader.load('Door.glb', (gltf) => {
-                                const model = gltf.scene;
-                                model.position.set(posX, 0, posZ);
-                                model.scale.set(2,2,2);
-                                this.scene.add(model);
-                                // Kapı etkileşim verisi
-                                model.userData = { type: 'door', locked: true };
-                                this.objects.push(model);
-                            }, undefined, () => {
-                                // Model yoksa yedek
-                                const d = new THREE.Mesh(new THREE.BoxGeometry(UNIT, UNIT*1.5, 0.5), new THREE.MeshBasicMaterial({color:0x0000aa}));
-                                d.position.set(posX, UNIT/1.5, posZ);
-                                d.userData = { type: 'door', locked: true };
-                                this.scene.add(d);
-                                this.objects.push(d);
-                            });
-                        }
-                        else if (type === 3) { // NOT (Lore)
-                            const noteGeo = new THREE.PlaneGeometry(0.5, 0.7);
-                            const noteMat = new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.DoubleSide});
-                            const note = new THREE.Mesh(noteGeo, noteMat);
-                            note.rotation.x = -Math.PI/2;
-                            note.position.set(posX, 0.1, posZ);
-                            note.userData = { type: 'note', id: Math.floor(Math.random()*3) };
-                            this.scene.add(note);
-                            this.objects.push(note);
-                        }
-                        else if (type === 9) { // ZOMBIE SPAWN
-                           this.spawnEnemy(posX, posZ);
-                        }
-                    });
-                });
-            },
-
-            // ==========================================
-            // 4. YAPAY ZEKA (ENEMY AI)
-            // ==========================================
-            spawnEnemy: function(x, z) {
-                const loader = new GLTFLoader();
-                loader.load('Zombie.glb', (gltf) => {
-                    const model = gltf.scene;
-                    this.initEnemy(model, x, z);
-                }, undefined, () => {
-                    // Model yoksa kırmızı kutu
-                    const geo = new THREE.BoxGeometry(1, 2.5, 1);
-                    const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-                    const model = new THREE.Mesh(geo, mat);
-                    this.initEnemy(model, x, z);
-                });
-            },
-
-            initEnemy: function(model, x, z) {
-                model.position.set(x, 0, z);
-                this.scene.add(model);
-                
-                // AI Verileri
-                this.enemy = {
-                    mesh: model,
-                    state: 'PATROL', // PATROL, CHASE, SEARCH
-                    speed: 3.5,
-                    target: new THREE.Vector3(),
-                    patrolTimer: 0
-                };
-            },
-
-            updateEnemy: function(dt) {
-                if (!this.enemy) return;
-                const e = this.enemy;
-                const pPos = this.camera.position;
-                const dist = e.mesh.position.distanceTo(pPos);
-
-                // Basit Görüş Alanı Kontrolü (Raycast yapılabilir ama basit tutuyoruz performans için)
-                let canSee = dist < 15; 
-
-                // STATE MACHINE
-                switch (e.state) {
-                    case 'PATROL':
-                        if (canSee) {
-                            e.state = 'CHASE';
-                            this.audio.playJumpscare(); // GÖRDÜ!
-                        } else {
-                            // Rastgele gezinme
-                            e.patrolTimer -= dt;
-                            if (e.patrolTimer <= 0) {
-                                e.target.set(
-                                    (Math.random()-0.5)*40,
-                                    0,
-                                    (Math.random()-0.5)*40
-                                );
-                                e.patrolTimer = 5;
-                            }
-                            this.moveEnemyTowards(e.target, dt * 0.5); // Yavaş yürü
-                        }
-                        break;
-
-                    case 'CHASE':
-                        this.moveEnemyTowards(pPos, dt * 1.5); // Hızlı koş
-                        if (dist < 1.5) {
-                            this.gameOver();
-                        }
-                        if (dist > 20) e.state = 'SEARCH'; // Kaçtık
-                        break;
-                    
-                    case 'SEARCH':
-                        // Son görülen yerde bekle
-                        e.patrolTimer -= dt;
-                        if(e.patrolTimer <= 0) e.state = 'PATROL';
-                        break;
+                else if (val === 8) {
+                    loadDoor(px, pz);
                 }
-            },
+            });
+        });
 
-            moveEnemyTowards: function(targetPos, speed) {
-                this.enemy.mesh.lookAt(targetPos.x, 0, targetPos.z);
-                this.enemy.mesh.translateZ(speed);
-            },
-
-            // ==========================================
-            // 5. OYUNCU VE KONTROLLER
-            // ==========================================
-            setupInputs: function() {
-                this.keys = { w:false, a:false, s:false, d:false, shift:false };
+        function loadZombie(x, z) {
+            const loader = new GLTFLoader();
+            loader.load('Zombie.glb', (gltf) => {
+                zombieRef = gltf.scene;
+                zombieRef.position.set(x, 0, z);
+                scene.add(zombieRef);
+            }, undefined, () => {
+                // Model yoksa: Siyah, Kırmızı Gözlü "Shadow Man"
+                const geo = new THREE.CapsuleGeometry(0.5, 1.8, 4, 8);
+                const mat = new THREE.MeshStandardMaterial({ color: 0x000000 });
+                zombieRef = new THREE.Mesh(geo, mat);
                 
-                document.addEventListener('keydown', (e) => {
-                    if (e.code === 'KeyW') this.keys.w = true;
-                    if (e.code === 'KeyA') this.keys.a = true;
-                    if (e.code === 'KeyS') this.keys.s = true;
-                    if (e.code === 'KeyD') this.keys.d = true;
-                    if (e.shiftKey) this.keys.shift = true;
-                    if (e.code === 'KeyE') this.checkInteraction();
-                });
+                // Gözler (Parlayan)
+                const eyeGeo = new THREE.SphereGeometry(0.1);
+                const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+                const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+                leftEye.position.set(-0.2, 0.8, 0.4);
+                rightEye.position.set(0.2, 0.8, 0.4);
+                zombieRef.add(leftEye);
+                zombieRef.add(rightEye);
 
-                document.addEventListener('keyup', (e) => {
-                    if (e.code === 'KeyW') this.keys.w = false;
-                    if (e.code === 'KeyA') this.keys.a = false;
-                    if (e.code === 'KeyS') this.keys.s = false;
-                    if (e.code === 'KeyD') this.keys.d = false;
-                    if (!e.shiftKey) this.keys.shift = false;
-                });
+                zombieRef.position.set(x, 1, z);
+                scene.add(zombieRef);
+            });
+        }
 
-                document.body.addEventListener('click', () => {
-                    if(this.active) this.controls.lock();
-                });
-            },
-
-            checkInteraction: function() {
-                // Raycasting (Bakılan objeyi bulma)
-                const raycaster = new THREE.Raycaster();
-                raycaster.setFromCamera(new THREE.Vector2(0,0), this.camera);
+        function loadDoor(x, z) {
+            const loader = new GLTFLoader();
+            loader.load('Door.glb', (gltf) => {
+                doorRef = gltf.scene;
+                doorRef.position.set(x, 0, z);
+                scene.add(doorRef);
+            }, undefined, () => {
+                // Model yoksa: Beyaz parlayan kapı
+                const geo = new THREE.BoxGeometry(UNIT, 3.5, 0.2);
+                const mat = new THREE.MeshStandardMaterial({ color: 0xcccccc });
+                doorRef = new THREE.Mesh(geo, mat);
+                doorRef.position.set(x, 1.75, z);
+                scene.add(doorRef);
                 
-                const intersects = raycaster.intersectObjects(this.objects);
-                if (intersects.length > 0) {
-                    const obj = intersects[0].object;
-                    const dist = intersects[0].distance;
-                    
-                    if (dist < 3) {
-                        // KAPI
-                        if (obj.userData.type === 'door') {
-                            if (this.player.keysFound > 0) {
-                                document.getElementById('win-screen').classList.remove('hidden');
-                                document.exitPointerLock();
-                                this.active = false;
-                            } else {
-                                this.showNotification("KİLİTLİ! ANAHTAR (NOT) GEREKLİ.");
-                            }
-                        }
-                        // NOT
-                        else if (obj.userData.type === 'note') {
-                            this.openNote(obj.userData.id);
-                            this.player.keysFound = 1; // Notu bulunca anahtarı almış sayıyoruz hikaye gereği
-                            this.scene.remove(obj); // Notu yerden al
-                        }
+                // Kapı Işığı
+                const l = new THREE.PointLight(0x0000ff, 5, 5);
+                l.position.set(x, 3, z);
+                scene.add(l);
+            });
+        }
+
+        // --- KONTROLLER ---
+        const controls = new PointerLockControls(camera, document.body);
+        const keys = { w:false, a:false, s:false, d:false };
+
+        document.addEventListener('keydown', (e) => {
+            if(e.code === 'KeyW') keys.w = true;
+            if(e.code === 'KeyS') keys.s = true;
+            if(e.code === 'KeyA') keys.a = true;
+            if(e.code === 'KeyD') keys.d = true;
+        });
+        document.addEventListener('keyup', (e) => {
+            if(e.code === 'KeyW') keys.w = false;
+            if(e.code === 'KeyS') keys.s = false;
+            if(e.code === 'KeyA') keys.a = false;
+            if(e.code === 'KeyD') keys.d = false;
+        });
+
+        // --- OYUN MANTIĞI ---
+        window.startGame = function() {
+            const code = document.getElementById('invite-code').value;
+            if(code === CODE) {
+                document.getElementById('menu-screen').classList.add('hidden');
+                isGameRunning = true;
+                controls.lock();
+                audioCtx.resume();
+            } else {
+                document.getElementById('error-msg').style.display = 'block';
+            }
+        }
+
+        const clock = new THREE.Clock();
+        const playerSpeed = 5.0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if(!isGameRunning) {
+                renderer.render(scene, camera);
+                return;
+            }
+
+            const dt = clock.getDelta();
+            
+            // --- OYUNCU HAREKETİ ---
+            const direction = new THREE.Vector3();
+            const forward = new THREE.Vector3();
+            const right = new THREE.Vector3();
+            
+            // Kameranın yönünü al ama Y eksenini sıfırla (Uçmasın)
+            camera.getWorldDirection(forward);
+            forward.y = 0;
+            forward.normalize();
+            
+            right.crossVectors(forward, new THREE.Vector3(0,1,0));
+            
+            if(keys.w) direction.add(forward);
+            if(keys.s) direction.sub(forward);
+            if(keys.d) direction.add(right);
+            if(keys.a) direction.sub(right);
+
+            if(direction.length() > 0) {
+                direction.normalize();
+                
+                // Duvar Çarpışma Kontrolü (Basit)
+                const nextPos = camera.position.clone().add(direction.multiplyScalar(playerSpeed * dt));
+                let collide = false;
+                
+                // Oyuncunun kapladığı alan (Kutu)
+                const pBox = new THREE.Box3().setFromCenterAndSize(nextPos, new THREE.Vector3(1,1,1));
+                
+                for(let w of walls) {
+                    if(w.intersectsBox(pBox)) {
+                        collide = true;
+                        break;
                     }
                 }
-            },
 
-            openNote: function(id) {
-                const titles = ["DENEY RAPORU #004", "BAKICI GÜNLÜĞÜ", "ACİL DURUM"];
-                const texts = [
-                    "Denek-0 (ZOMBIE) çok agresif. Işığa tepki veriyor. Pili korumalıyım.",
-                    "Kapının şifresi değiştirildi. Anahtarı yönetici odasında unuttum.",
-                    "Kaçın! Sadece ana kapıdan çıkış var ama kilitli."
-                ];
-                
-                document.getElementById('note-title').innerText = titles[id] || "BİLİNMEYEN KAĞIT";
-                document.getElementById('note-body').innerText = texts[id] || "Okunamıyor...";
-                
-                document.getElementById('note-overlay').style.display = 'flex';
-                document.exitPointerLock();
-                
-                // Not kapatma olayı
-                const closeNote = (e) => {
-                    if(e.key === 'e' || e.key === 'Escape') {
-                        document.getElementById('note-overlay').style.display = 'none';
-                        this.controls.lock();
-                        window.removeEventListener('keydown', closeNote);
-                    }
-                };
-                window.setTimeout(() => window.addEventListener('keydown', closeNote), 500);
-            },
-
-            // ==========================================
-            // 6. FİZİK & HAREKET LOOP
-            // ==========================================
-            updatePlayer: function(dt) {
-                // Stamina ve Hız
-                let speed = CONFIG.WALK_SPEED;
-                if (this.keys.shift && this.player.stamina > 0) {
-                    speed = CONFIG.RUN_SPEED;
-                    this.player.stamina -= dt * 20;
-                } else {
-                    if (this.player.stamina < 100) this.player.stamina += dt * 5;
-                }
-                
-                // Pil Tüketimi
-                this.player.battery -= dt * CONFIG.BATTERY_DRAIN;
-                if (this.player.battery <= 0) {
-                    this.gameOver("PİL BİTTİ. KARANLIKTA KAYBOLDUN.");
-                }
-
-                // UI Güncelleme
-                document.getElementById('stamina-bar').style.width = this.player.stamina + "%";
-                document.getElementById('battery-level').innerText = `BAT: ${Math.floor(this.player.battery)}%`;
-                
-                // Titrek Işık (Gerilim)
-                this.flashlight.intensity = 2 + Math.random() * 0.5 * (this.player.battery/100);
-
-                // Hareket Hesaplama
-                const velocity = new THREE.Vector3();
-                if (this.keys.w) velocity.z = speed * dt;
-                if (this.keys.s) velocity.z = -speed * dt;
-                if (this.keys.a) velocity.x = -speed * dt;
-                if (this.keys.d) velocity.x = speed * dt;
-
-                this.controls.moveRight(velocity.x);
-                this.controls.moveForward(velocity.z);
-
-                // --- ÇARPIŞMA (COLLISION) ---
-                // Çok basit bir duvar kontrolü (Kameranın olduğu yerde duvar var mı?)
-                const pPos = this.camera.position;
-                this.walls.forEach(box => {
-                    if (box.containsPoint(pPos)) {
-                        // Duvarın içine girdiysek geri it
-                        this.controls.moveRight(-velocity.x);
-                        this.controls.moveForward(-velocity.z);
-                    }
-                });
-                
-                // Yerden yüksekliği sabitle
-                this.camera.position.y = 1.7;
-
-                // Adım Sesi
-                if (velocity.length() > 0 && Math.random() < 0.05) {
-                    this.audio.playStep();
-                }
-            },
-
-            gameOver: function(reason = "BAĞLANTI KOPTU") {
-                this.active = false;
-                document.exitPointerLock();
-                document.getElementById('game-over-screen').classList.remove('hidden');
-                document.querySelector('#game-over-screen p').innerText = reason;
-            },
-
-            showNotification: function(text) {
-                const el = document.getElementById('interaction-text');
-                el.innerText = text;
-                el.style.display = 'block';
-                setTimeout(() => { el.style.display = 'none'; el.innerText = "İNCELEMEK İÇİN [E]"; }, 2000);
-            },
-
-            // ==========================================
-            // MAIN LOOP
-            // ==========================================
-            gameLoop: function() {
-                if (!this.active) return;
-                requestAnimationFrame(() => this.gameLoop());
-
-                const dt = 0.016; // Yaklaşık 60 FPS
-                
-                this.updatePlayer(dt);
-                this.updateEnemy(dt);
-                this.renderer.render(this.scene, this.camera);
-                
-                // Timer güncelle
-                const t = Date.now();
-                document.getElementById('timer').innerText = t;
-
-                // Etkileşim kontrolü (UI için)
-                const raycaster = new THREE.Raycaster();
-                raycaster.setFromCamera(new THREE.Vector2(0,0), this.camera);
-                const hits = raycaster.intersectObjects(this.objects);
-                const interactText = document.getElementById('interaction-text');
-                
-                if (hits.length > 0 && hits[0].distance < 3) {
-                    interactText.style.display = 'block';
-                } else {
-                    interactText.style.display = 'none';
+                if(!collide) {
+                    camera.position.copy(nextPos);
                 }
             }
-        };
 
-        // Window değişkenine ata ki HTML'den erişebilelim
-        window.Game = Game;
+            // --- ZOMBİ YAPAY ZEKA (ÖLÜMCÜL) ---
+            if(zombieRef) {
+                zombieRef.lookAt(camera.position.x, zombieRef.position.y, camera.position.z);
+                
+                const dist = zombieRef.position.distanceTo(camera.position);
+                
+                // Ses Sistemi (Kalp Atışı)
+                playHeartbeat(dist);
 
+                if(dist > 1.2) {
+                    // Takip et
+                    const zSpeed = 3.8; // Oyuncudan biraz yavaş ama pes etmez
+                    zombieRef.translateZ(zSpeed * dt);
+                } else {
+                    // YAKALADI - ÖLÜM
+                    isGameRunning = false;
+                    document.getElementById('blood-overlay').style.display = 'block';
+                    document.exitPointerLock();
+                    
+                    // 1 saniye sonra ölüm ekranı
+                    setTimeout(() => {
+                        document.getElementById('death-screen').classList.remove('hidden');
+                    }, 1000);
+                }
+            }
+
+            // Kapı kontrol
+            if(doorRef) {
+                if(camera.position.distanceTo(doorRef.position) < 2) {
+                    alert("KAÇIŞ BAŞARILI!");
+                    location.reload();
+                }
+            }
+
+            // Zamanlayıcı
+            document.getElementById('time-display').innerText = new Date().toLocaleTimeString();
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>
